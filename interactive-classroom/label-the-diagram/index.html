@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Drag names onto the parts of a picture. Use the built-in examples or upload your own diagram and mark the parts yourself. An Interactive Classroom activity.">
+<title>Label the Diagram · Interactive Classroom</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: #223e38;
+    background: #f6f7f2;
+  }
+
+  body { margin: 0; }
+  button, input, select, textarea { font: inherit; }
+  [hidden] { display: none !important; }
+
+  button, a.home {
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 1px solid #ced8d0;
+    border-radius: 10px;
+    background: white;
+    color: #29483e;
+    font-weight: 650;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  button:hover, a.home:hover { background: #edf3ed; }
+  button:disabled { opacity: .48; cursor: default; }
+
+  button:focus-visible, a:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 3px solid #b98b24;
+    outline-offset: 4px;
+  }
+
+  .primary { background: #285f4c; border-color: #285f4c; color: white; }
+  .primary:hover { background: #174d3a; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 22px 4vw;
+    background: #fffef9;
+    border-bottom: 1px solid #dce2d8;
+  }
+
+  header strong { display: block; font-size: 25px; }
+  small, .muted { color: #687b70; line-height: 1.6; }
+  .home { display: inline-flex; align-items: center; text-decoration: none; }
+  .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .center { justify-content: center; }
+
+  main { max-width: 1400px; margin: auto; padding: 28px 3vw; }
+  h1 { font-size: clamp(28px, 4vw, 42px); letter-spacing: -1px; margin: 0 0 10px; }
+  h2 { font-size: 21px; margin: 0 0 12px; }
+  h3 { font-size: 17px; margin: 0 0 10px; }
+  p { line-height: 1.6; color: #687b70; margin: 0 0 14px; }
+
+  .panel {
+    margin-top: 22px;
+    padding: clamp(20px, 3vw, 32px);
+    background: #fffefa;
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+  }
+
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .row { display: flex; gap: 15px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 120px; }
+  .field { margin-bottom: 20px; }
+
+  label { display: block; font-weight: 650; font-size: 14px; margin-bottom: 8px; }
+
+  input:not([type=checkbox]):not([type=file]), select, textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px;
+    border: 1px solid #cbd6c7;
+    border-radius: 8px;
+    color: #223e38;
+    background: white;
+  }
+
+  textarea { min-height: 220px; line-height: 1.5; resize: vertical; }
+
+  .check { display: flex; align-items: center; gap: 12px; min-height: 46px; }
+  .check input { width: 22px; height: 22px; accent-color: #285f4c; flex-shrink: 0; }
+  .check label { margin: 0; cursor: pointer; }
+  .nested { padding-left: 34px; }
+
+  .notice { min-height: 26px; color: #a34539; margin-top: 14px; }
+  .notice.ok { color: #28633e; }
+
+  .topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .badge { background: #e6eddf; border-radius: 25px; padding: 10px 17px; font-size: 14px; }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #687b70;
+  }
+
+  .question { text-align: center; padding: 20px 0 8px; }
+
+  .prompt {
+    font-size: clamp(46px, 7vw, 84px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.2;
+    margin: 6px 0 12px;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  /* Draggable tiles and the places they can be dropped. */
+  .tile {
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 2px solid #adc3ad;
+    border-radius: 9px;
+    background: #fffefa;
+    box-shadow: 0 3px 0 #dce1d4;
+    font-size: 22px;
+    line-height: 1.3;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .tile[aria-pressed=true] { outline: 3px solid #c7942f; outline-offset: 3px; }
+  .tile.good { background: #e5f3e4; border-color: #418251; }
+  .tile.bad { background: #fff0eb; border-color: #bb6658; }
+
+  .bank {
+    margin-top: 18px;
+    padding: 22px;
+    border: 2px dashed #c6d2bd;
+    border-radius: 16px;
+    background: #eef1e8;
+    min-width: 0;
+  }
+
+  .bank-list {
+    display: flex;
+    gap: 13px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    min-height: 60px;
+  }
+
+  .over { background: #fff4d2; box-shadow: 0 0 0 4px #e0be62; }
+  .source-drag { opacity: .3; }
+
+  .ghost {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: .96;
+    transform: rotate(-4deg);
+    margin: 0;
+    max-width: 320px;
+    box-shadow: 0 12px 30px #223e3833;
+  }
+
+  .empty { color: #7c8c7f; font-size: 14px; line-height: 1.6; padding: 14px 0; pointer-events: none; }
+
+  .selection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+    padding: 12px 16px;
+    border: 1px solid #eadfbe;
+    border-radius: 11px;
+    background: #fff9e9;
+    color: #7d5d24;
+    line-height: 1.5;
+  }
+
+  .feedback {
+    min-height: 68px;
+    padding: 19px 5px;
+    text-align: center;
+    font-size: 21px;
+    font-weight: 650;
+  }
+
+  .feedback.good { color: #28633e; }
+  .feedback.bad { color: #a34539; }
+
+  .stats { display: flex; gap: 15px; flex-wrap: wrap; margin: 24px 0; }
+  .stat { flex: 1; min-width: 150px; padding: 20px; background: #eef1e8; border-radius: 12px; }
+  .stat strong { display: block; font-size: 34px; }
+
+  .table-wrap { overflow: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #dce2d8; }
+
+  dialog {
+    width: min(460px, calc(100% - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    padding: 28px;
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+    background: #fffefa;
+    color: #223e38;
+    box-shadow: 0 20px 80px #223e3840;
+  }
+
+  dialog::backdrop { background: #14281e88; }
+
+  footer { text-align: center; color: #708076; font-size: 13px; line-height: 1.6; padding: 25px 0; }
+  footer a { color: inherit; }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  @media (max-width: 850px) {
+    .setup-grid { grid-template-columns: 1fr; }
+    .tile { font-size: 19px; }
+    main { padding: 24px 14px; }
+  }
+
+  .editor-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 32px; }
+
+  .stage-wrap {
+    padding: 12px;
+    text-align: center;
+    background: #fffefa;
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+  }
+
+  /* The stage hugs the picture, so spots can be placed by percentage. */
+  .stage { position: relative; display: inline-block; max-width: 100%; line-height: 0; }
+
+  .stage img {
+    display: block;
+    max-width: 100%;
+    max-height: 72vh;
+    border-radius: 10px;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  #edit-stage { cursor: crosshair; }
+
+  .marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    min-height: 0;
+    padding: 0;
+    border: 3px solid #fffef9;
+    border-radius: 50%;
+    background: #b87528;
+    color: white;
+    font-size: 17px;
+    line-height: 1;
+    box-shadow: 0 2px 8px #223e3855;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .marker:hover { background: #9c6220; }
+
+  .holder {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    min-width: 62px;
+    max-width: 34%;
+    padding: 4px;
+    border: 2px dashed #709479;
+    border-radius: 10px;
+    background: #fffef5e6;
+    box-shadow: 0 2px 7px #223e3822;
+    line-height: 1.25;
+  }
+
+  .holder.filled { border-style: solid; }
+  .holder.over { background: #fff3d0; box-shadow: 0 0 0 4px #e0be62; z-index: 4; }
+
+  .holder .spot {
+    display: block;
+    width: 100%;
+    min-height: 34px;
+    padding: 4px 8px;
+    border: 0;
+    background: transparent;
+    color: #4d7055;
+    font-size: 15px;
+  }
+
+  .holder .tile {
+    display: block;
+    width: 100%;
+    min-height: 34px;
+    padding: 6px 9px;
+    border-width: 1px;
+    box-shadow: none;
+    font-size: clamp(13px, 1.5vw, 18px);
+  }
+
+  .label-row { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+
+  .label-row .number {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #b87528;
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .label-row input { flex: 1; min-width: 0; }
+  .label-row button { flex: none; padding: 8px 13px; }
+  .tools { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  @media (max-width: 850px) {
+    .editor-grid { grid-template-columns: 1fr; }
+    .holder { min-width: 44px; }
+    .holder .tile, .holder .spot { min-height: 26px; padding: 3px 5px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <strong>Label the Diagram</strong>
+    <small>Interactive Classroom · Every part has a name.</small>
+  </div>
+  <div class="actions">
+    <a class="home" href="../">Classroom home</a>
+    <button id="fullscreen" type="button">Full screen</button>
+  </div>
+</header>
+
+<main>
+  <section id="setup-view">
+    <h1>What is each part called?</h1>
+    <p>Choose a picture, mark its parts, and let students drag each name into place.</p>
+
+    <form id="setup-form" class="panel">
+      <div class="editor-grid">
+        <div>
+          <div class="stage-wrap">
+            <div class="stage" id="edit-stage">
+              <img id="edit-image" alt="The picture being labeled" draggable="false">
+              <div id="edit-markers"></div>
+            </div>
+          </div>
+          <p style="margin-top:12px"><small>
+            Tap the picture to add a label spot, then name it in the list.
+            Drag a numbered spot to move it. Up to 40 labels.
+          </small></p>
+        </div>
+
+        <div>
+          <div class="field">
+            <label for="title">Activity title</label>
+            <input id="title" maxlength="100">
+          </div>
+
+          <h2>Picture</h2>
+          <div class="tools">
+            <button id="use-plant" type="button">Example: plant parts</button>
+            <button id="use-water" type="button">Example: water cycle</button>
+            <button id="upload" type="button">↑ Upload a picture</button>
+          </div>
+          <p style="margin-top:10px"><small>
+            Your picture stays in this browser. Large pictures are shrunk
+            to fit, and uploading a new one starts a fresh set of labels.
+          </small></p>
+          <input id="upload-file" type="file" accept="image/*" hidden>
+
+          <h2 style="margin-top:24px">Labels</h2>
+          <div id="label-list"></div>
+          <p id="no-labels" class="muted">No labels yet. Tap the picture to add the first one.</p>
+
+          <div class="check">
+            <input id="shuffle" type="checkbox">
+            <label for="shuffle">Shuffle the word bank when starting</label>
+          </div>
+
+          <h2 style="margin-top:24px">Share this lesson</h2>
+          <div class="tools">
+            <button id="export" type="button">↓ Export lesson</button>
+            <button id="import" type="button">↑ Import lesson</button>
+          </div>
+          <p style="margin-top:10px"><small>
+            A lesson file holds the picture, the spots, and their names.
+          </small></p>
+          <input id="import-file" type="file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+
+      <button class="primary" type="submit" style="margin-top:20px">Start activity</button>
+      <div id="setup-message" class="notice" role="status"></div>
+    </form>
+  </section>
+
+  <section id="play-view" hidden>
+    <div class="topline">
+      <span class="badge" id="progress"></span>
+      <div class="actions">
+        <button id="reset" type="button">Reset labels</button>
+        <button id="end" type="button">End activity</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <h1 id="activity-title"></h1>
+      <p>Put each name in the matching box on the picture.</p>
+    </div>
+
+    <div class="stage-wrap">
+      <div class="stage" id="play-stage">
+        <img id="play-image" alt="The picture to label" draggable="false">
+        <div id="holders"></div>
+      </div>
+    </div>
+
+    <div class="selection">
+      <span id="selected-name"></span>
+      <button id="return-label" type="button" disabled>Return selected name</button>
+    </div>
+
+    <section class="bank" id="bank" data-drop="bank">
+      <div class="topline">
+        <h2>Word bank</h2>
+        <span class="badge" id="bank-count"></span>
+      </div>
+      <p><small>Tap or drag a name. To change your mind, move it to a different box or back here.</small></p>
+      <div class="bank-list" id="bank-list"></div>
+    </section>
+
+    <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+
+    <div class="actions center">
+      <button id="check" class="primary" type="button">Check my labels</button>
+      <button id="finish" type="button" hidden>See results</button>
+    </div>
+  </section>
+
+  <section id="results-view" class="panel" hidden>
+    <h1 id="results-title"></h1>
+    <p id="results-description"></p>
+    <div class="stats" id="stats"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Placed at</th>
+            <th>Outcome</th>
+          </tr>
+        </thead>
+        <tbody id="result-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="actions" style="margin-top:24px">
+      <button id="again" class="primary" type="button">Label it again</button>
+      <button id="back" type="button">Back to setup</button>
+    </div>
+  </section>
+
+  <footer><span id="save-status">Settings and progress save in this browser on this device.</span></footer>
+  <div id="announce" class="sr" aria-live="polite"></div>
+</main>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-message"></p>
+    <div class="actions" style="justify-content:flex-end;margin-top:24px">
+      <button value="cancel" autofocus>Cancel</button>
+      <button value="yes" class="primary">Continue</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+
+const SAVED_TEXT = 'Settings and progress save in this browser on this device.';
+
+function shuffled(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function announce(text) {
+  $('announce').textContent = text;
+}
+
+// Everything is kept in this browser; nothing is sent to a server.
+function readStored(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeStored(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    $('save-status').textContent = SAVED_TEXT;
+    return true;
+  } catch (error) {
+    $('save-status').textContent =
+      'Browser storage is unavailable or full. This session cannot be saved.';
+    return false;
+  }
+}
+
+// An on-page confirmation that also works in full screen.
+let pendingAction = null;
+
+function ask(title, message, action) {
+  $('confirm-title').textContent = title;
+  $('confirm-message').textContent = message;
+  pendingAction = action;
+
+  const dialog = $('confirm-dialog');
+  dialog.returnValue = 'cancel';
+  if (!dialog.open) dialog.showModal();
+}
+
+$('confirm-dialog').addEventListener('close', () => {
+  const action = pendingAction;
+  pendingAction = null;
+  if ($('confirm-dialog').returnValue === 'yes') action?.();
+});
+
+$('fullscreen').onclick = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (error) {
+    $('save-status').textContent =
+      'Full screen is unavailable. Use your browser’s full-screen command.';
+  }
+};
+
+document.addEventListener('fullscreenchange', () => {
+  $('fullscreen').textContent =
+    document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+});
+
+function show(view) {
+  ['setup', 'play', 'results'].forEach(name => {
+    $(name + '-view').hidden = name !== view;
+  });
+}
+
+function setFeedback(text, kind = '') {
+  $('feedback').textContent = text;
+  $('feedback').className = 'feedback' + (kind ? ' ' + kind : '');
+}
+
+function showStats(stats) {
+  $('stats').replaceChildren(...stats.map(([label, value]) => {
+    const box = document.createElement('div');
+    const strong = document.createElement('strong');
+    box.className = 'stat';
+    strong.textContent = value;
+    box.append(strong, document.createTextNode(label));
+    return box;
+  }));
+}
+
+// Cells may be plain text or ready-made elements.
+function showRows(rows) {
+  $('result-rows').replaceChildren(...rows.map(cells => {
+    const row = document.createElement('tr');
+    cells.forEach(value => {
+      const cell = document.createElement('td');
+      cell.append(value instanceof Node ? value : String(value));
+      row.append(cell);
+    });
+    return row;
+  }));
+}
+
+// Pointer Events cover finger, pen, and mouse dragging. Each page supplies
+// handleDrop(source, zone, event), where zone is the [data-drop] element
+// under the pointer, or null.
+let drag = null;
+let suppressClick = false;
+
+function dropZoneAt(x, y) {
+  return document.elementFromPoint(x, y)?.closest('[data-drop]') || null;
+}
+
+function clearHover() {
+  document.querySelectorAll('.over').forEach(element =>
+    element.classList.remove('over')
+  );
+}
+
+function startDrag(event) {
+  if (event.button !== 0 || drag) return;
+
+  const source = event.currentTarget;
+
+  drag = {
+    source,
+    pointer: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+    ghost: null
+  };
+
+  source.setPointerCapture(event.pointerId);
+  source.addEventListener('pointermove', moveDrag);
+  source.addEventListener('pointerup', endDrag);
+  source.addEventListener('pointercancel', cancelDrag);
+  source.addEventListener('lostpointercapture', cancelDrag);
+}
+
+function moveDrag(event) {
+  if (!drag || event.pointerId !== drag.pointer) return;
+
+  if (
+    !drag.ghost &&
+    Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 8
+  ) {
+    const rect = drag.source.getBoundingClientRect();
+
+    drag.ghost = drag.source.cloneNode(true);
+    drag.ghost.removeAttribute('id');
+    drag.ghost.classList.add('ghost');
+    drag.ghost.style.width = rect.width + 'px';
+    drag.ghost.setAttribute('aria-hidden', 'true');
+
+    document.body.append(drag.ghost);
+    drag.source.classList.add('source-drag');
+  }
+
+  if (!drag.ghost) return;
+
+  event.preventDefault();
+
+  drag.ghost.style.left =
+    (event.clientX - drag.ghost.offsetWidth / 2) + 'px';
+  drag.ghost.style.top =
+    (event.clientY - drag.ghost.offsetHeight / 2) + 'px';
+
+  clearHover();
+
+  const zone = dropZoneAt(event.clientX, event.clientY);
+  if (zone && !zone.contains(drag.source)) zone.classList.add('over');
+
+  if (event.clientY > innerHeight - 70) window.scrollBy(0, 18);
+  if (event.clientY < 70) window.scrollBy(0, -18);
+}
+
+function cancelDrag() {
+  if (!drag) return;
+
+  const current = drag;
+  drag = null;
+
+  current.ghost?.remove();
+  current.source.classList.remove('source-drag');
+  current.source.removeEventListener('pointermove', moveDrag);
+  current.source.removeEventListener('pointerup', endDrag);
+  current.source.removeEventListener('pointercancel', cancelDrag);
+  current.source.removeEventListener('lostpointercapture', cancelDrag);
+
+  if (current.source.hasPointerCapture(current.pointer)) {
+    current.source.releasePointerCapture(current.pointer);
+  }
+
+  clearHover();
+}
+
+function endDrag(event) {
+  if (!drag || event.pointerId !== drag.pointer) return;
+
+  const current = drag;
+  const moved = Boolean(current.ghost);
+  const zone = dropZoneAt(event.clientX, event.clientY);
+
+  cancelDrag();
+
+  if (moved) {
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 200);
+    handleDrop(current.source, zone, event);
+  }
+}
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && drag) {
+    cancelDrag();
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 200);
+  }
+});
+
+const KEY = 'interactive-label-the-diagram-v1';
+const FILE_FORMAT = 'interactive-label-the-diagram';
+const FILE_VERSION = 1;
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_CHARS = 6 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
+const MAX_SIDE = 1400;
+const MAX_LABELS = 40;
+const MAX_LABEL_LENGTH = 60;
+
+// Two ready-made pictures, drawn here so the page needs no other files.
+const EXAMPLES = {
+  plant: {
+    title: 'Parts of a plant',
+    labels: [
+      { text: 'Flower', x: 78, y: 17 },
+      { text: 'Leaf', x: 17, y: 49 },
+      { text: 'Stem', x: 76, y: 63 },
+      { text: 'Roots', x: 21, y: 86 }
+    ],
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 520" width="600" height="520">
+<rect width="600" height="520" fill="#eef6f1"/>
+<rect y="372" width="600" height="148" fill="#b98d62"/>
+<rect y="372" width="600" height="9" fill="#9c7248"/>
+<g fill="none" stroke="#f3e3c8" stroke-width="6" stroke-linecap="round">
+<path d="M300 376V470"/><path d="M300 398Q268 420 238 456"/><path d="M300 398Q332 420 364 452"/>
+<path d="M300 432Q282 456 266 494"/><path d="M300 432Q322 458 340 492"/>
+</g>
+<path d="M300 378V150" stroke="#4d8a52" stroke-width="11" stroke-linecap="round"/>
+<g fill="#6aa868" stroke="#4d8a52" stroke-width="3" stroke-linejoin="round">
+<path d="M300 292Q232 246 180 290Q238 338 300 292Z"/>
+<path d="M300 236Q368 190 420 234Q362 282 300 236Z"/>
+</g>
+<g fill="none" stroke="#4d8a52" stroke-width="2"><path d="M300 292Q240 286 186 290"/><path d="M300 236Q360 230 414 234"/></g>
+<g fill="#f2b84b" stroke="#c98d1f" stroke-width="2">
+<ellipse cx="300" cy="74" rx="19" ry="34"/>
+<ellipse cx="300" cy="74" rx="19" ry="34" transform="rotate(45 300 120)"/>
+<ellipse cx="300" cy="74" rx="19" ry="34" transform="rotate(90 300 120)"/>
+<ellipse cx="300" cy="74" rx="19" ry="34" transform="rotate(135 300 120)"/>
+<ellipse cx="300" cy="74" rx="19" ry="34" transform="rotate(180 300 120)"/>
+<ellipse cx="300" cy="74" rx="19" ry="34" transform="rotate(225 300 120)"/>
+<ellipse cx="300" cy="74" rx="19" ry="34" transform="rotate(270 300 120)"/>
+<ellipse cx="300" cy="74" rx="19" ry="34" transform="rotate(315 300 120)"/>
+</g>
+<circle cx="300" cy="120" r="25" fill="#8a5a2b"/>
+<g stroke="#5c7065" stroke-width="2.5" fill="#5c7065">
+<path d="M346 104L420 92"/><circle cx="346" cy="104" r="4"/>
+<path d="M212 284L150 262"/><circle cx="212" cy="284" r="4"/>
+<path d="M308 328L400 328"/><circle cx="308" cy="328" r="4"/>
+<path d="M250 446L186 448"/><circle cx="250" cy="446" r="4"/>
+</g>
+</svg>`
+  },
+
+  water: {
+    title: 'The water cycle',
+    labels: [
+      { text: 'Evaporation', x: 13, y: 52 },
+      { text: 'Condensation', x: 41, y: 13 },
+      { text: 'Precipitation', x: 53, y: 46 },
+      { text: 'Collection', x: 24, y: 88 }
+    ],
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+<defs><marker id="tip" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#d9792b"/></marker></defs>
+<rect width="800" height="500" fill="#dff0f7"/>
+<circle cx="92" cy="84" r="44" fill="#f4c542"/>
+<g stroke="#f4c542" stroke-width="6" stroke-linecap="round">
+<path d="M92 20V4"/><path d="M92 148V164"/><path d="M28 84H12"/><path d="M156 84H172"/>
+<path d="M47 39L36 28"/><path d="M137 39L148 28"/><path d="M47 129L36 140"/><path d="M137 129L148 140"/>
+</g>
+<path d="M470 400L650 150L800 330V400Z" fill="#9db29f"/>
+<path d="M650 150L615 199L640 190L655 206L672 188L690 196Z" fill="#fbfdfc"/>
+<path d="M330 400Q420 330 560 350Q700 320 800 345V500H330Z" fill="#a8c79a"/>
+<path d="M0 372Q90 356 180 372T360 372V500H0Z" fill="#6fa8c7"/>
+<g fill="none" stroke="#dff0f7" stroke-width="3" stroke-linecap="round" opacity=".8">
+<path d="M40 420Q60 410 80 420T120 420"/><path d="M190 455Q210 445 230 455T270 455"/><path d="M150 400Q170 390 190 400T230 400"/>
+</g>
+<path d="M656 250Q600 300 540 318Q440 340 352 388" fill="none" stroke="#6fa8c7" stroke-width="10" stroke-linecap="round"/>
+<g fill="#fbfdfc" stroke="#9db4bf" stroke-width="6" stroke-linejoin="round">
+<circle cx="520" cy="104" r="34"/><circle cx="566" cy="84" r="44"/><circle cx="620" cy="104" r="36"/>
+<rect x="506" y="100" width="128" height="40" rx="20"/>
+</g>
+<g fill="#fbfdfc">
+<circle cx="520" cy="104" r="34"/><circle cx="566" cy="84" r="44"/><circle cx="620" cy="104" r="36"/>
+<rect x="506" y="100" width="128" height="40" rx="20"/>
+</g>
+<g stroke="#4f8fb3" stroke-width="5" stroke-linecap="round">
+<path d="M520 168L510 192"/><path d="M556 168L546 192"/><path d="M592 168L582 192"/><path d="M628 168L618 192"/>
+<path d="M538 214L528 238"/><path d="M574 214L564 238"/><path d="M610 214L600 238"/>
+</g>
+<g fill="none" stroke="#d9792b" stroke-width="5" stroke-linecap="round" marker-end="url(#tip)">
+<path d="M200 356Q184 326 200 300T200 240"/>
+<path d="M254 356Q238 326 254 300T254 240"/>
+<path d="M308 356Q292 326 308 300T308 240"/>
+<path d="M270 200Q340 120 462 104"/>
+<path d="M430 356Q400 372 372 384"/>
+</g>
+</svg>`
+  }
+};
+
+const svgUrl = svg => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+
+function exampleLesson(name) {
+  return {
+    title: EXAMPLES[name].title,
+    picture: name,
+    image: null,
+    labels: clone(EXAMPLES[name].labels)
+  };
+}
+
+let lesson = exampleLesson('plant');
+let settings = { shuffle: true };
+let activity = null;
+let selected = null;     // index of the chosen tile
+let markerDrag = null;
+let suppressAdd = false;
+let fileBusy = false;
+
+const pictureOf = value => value.picture === 'custom'
+  ? value.image
+  : svgUrl(EXAMPLES[value.picture].svg);
+
+const same = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+function validImage(image) {
+  return typeof image === 'string' &&
+    image.length <= MAX_IMAGE_CHARS &&
+    /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(image);
+}
+
+function validLesson(value) {
+  return value &&
+    typeof value.title === 'string' && value.title.length <= 100 &&
+    (
+      value.picture === 'custom'
+        ? validImage(value.image)
+        : Object.prototype.hasOwnProperty.call(EXAMPLES, value.picture) &&
+          value.image === null
+    ) &&
+    Array.isArray(value.labels) &&
+    value.labels.length <= MAX_LABELS &&
+    value.labels.every(label =>
+      label &&
+      typeof label.text === 'string' &&
+      label.text.length <= MAX_LABEL_LENGTH &&
+      !/[\r\n]/.test(label.text) &&
+      [label.x, label.y].every(n =>
+        typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100
+      )
+    );
+}
+
+function validActivity(a) {
+  if (
+    !a ||
+    !['active', 'complete', 'ended'].includes(a.status) ||
+    !Array.isArray(a.tiles) ||
+    a.tiles.length !== lesson.labels.length ||
+    !a.tiles.length ||
+    !Number.isInteger(a.failedChecks) || a.failedChecks < 0 ||
+    !(a.lastSig === null || typeof a.lastSig === 'string')
+  ) return false;
+
+  const spot = value =>
+    Number.isInteger(value) && value >= 0 && value < lesson.labels.length;
+
+  const placed = a.tiles.filter(tile => tile && tile.at !== null);
+
+  return a.tiles.every(tile =>
+      tile && spot(tile.label) && (tile.at === null || spot(tile.at))
+    ) &&
+    new Set(a.tiles.map(tile => tile.label)).size === a.tiles.length &&
+    new Set(placed.map(tile => tile.at)).size === placed.length &&
+    lesson.labels.every(label => label.text.trim());
+}
+
+const saved = readStored(KEY);
+
+if (saved?.version === 1 && validLesson(saved.lesson)) {
+  lesson = saved.lesson;
+  if (typeof saved.settings?.shuffle === 'boolean') {
+    settings = { shuffle: saved.settings.shuffle };
+  }
+  if (validActivity(saved.activity)) activity = saved.activity;
+}
+
+function save() {
+  return writeStored(KEY, { version: 1, lesson, settings, activity });
+}
+
+function setMessage(text, ok = false) {
+  $('setup-message').textContent = text;
+  $('setup-message').classList.toggle('ok', ok);
+}
+
+// ---- Setup: the picture, its spots, and their names ----
+
+function renderEditor() {
+  $('edit-image').src = pictureOf(lesson);
+  $('title').value = lesson.title;
+  $('shuffle').checked = settings.shuffle;
+  renderMarkers();
+  renderList();
+}
+
+function renderMarkers() {
+  $('edit-markers').replaceChildren(...lesson.labels.map((label, index) => {
+    const marker = document.createElement('button');
+
+    marker.type = 'button';
+    marker.className = 'marker';
+    marker.textContent = index + 1;
+    marker.style.left = label.x + '%';
+    marker.style.top = label.y + '%';
+    marker.dataset.index = index;
+
+    marker.setAttribute(
+      'aria-label',
+      'Spot ' + (index + 1) + (label.text ? ', ' + label.text : '') +
+      '. Drag to move, or use the arrow keys.'
+    );
+
+    marker.addEventListener('pointerdown', startMarkerDrag);
+
+    marker.addEventListener('click', event => {
+      event.stopPropagation();
+      if (!suppressAdd) $('label-' + index)?.focus();
+    });
+
+    marker.addEventListener('keydown', event => {
+      const step = {
+        ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1]
+      }[event.key];
+
+      if (!step) return;
+
+      event.preventDefault();
+      label.x = Math.max(0, Math.min(100, label.x + step[0]));
+      label.y = Math.max(0, Math.min(100, label.y + step[1]));
+      marker.style.left = label.x + '%';
+      marker.style.top = label.y + '%';
+      save();
+    });
+
+    return marker;
+  }));
+}
+
+function renderList() {
+  $('no-labels').hidden = lesson.labels.length > 0;
+
+  $('label-list').replaceChildren(...lesson.labels.map((label, index) => {
+    const row = document.createElement('div');
+    const number = document.createElement('span');
+    const input = document.createElement('input');
+    const remove = document.createElement('button');
+
+    row.className = 'label-row';
+    number.className = 'number';
+    number.textContent = index + 1;
+
+    input.id = 'label-' + index;
+    input.maxLength = MAX_LABEL_LENGTH;
+    input.value = label.text;
+    input.placeholder = 'Name for spot ' + (index + 1);
+    input.setAttribute('aria-label', 'Name for spot ' + (index + 1));
+
+    input.addEventListener('input', event => {
+      event.stopPropagation();
+      label.text = input.value;
+      save();
+    });
+
+    // Enter moves to the next name instead of starting the activity.
+    input.addEventListener('keydown', event => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      ($('label-' + (index + 1)) || input).focus();
+    });
+
+    remove.type = 'button';
+    remove.textContent = 'Remove';
+    remove.setAttribute('aria-label', 'Remove spot ' + (index + 1));
+
+    remove.onclick = () => {
+      lesson.labels.splice(index, 1);
+      save();
+      renderMarkers();
+      renderList();
+    };
+
+    row.append(number, input, remove);
+    return row;
+  }));
+}
+
+function stagePoint(event, stage) {
+  const box = stage.getBoundingClientRect();
+  const percent = (value, size) =>
+    Math.round(Math.max(0, Math.min(100, value / size * 100)) * 10) / 10;
+
+  return {
+    x: percent(event.clientX - box.left, box.width),
+    y: percent(event.clientY - box.top, box.height)
+  };
+}
+
+$('edit-stage').addEventListener('click', event => {
+  if (suppressAdd) return;
+
+  if (lesson.labels.length >= MAX_LABELS) {
+    setMessage('A picture can have up to ' + MAX_LABELS + ' labels.');
+    return;
+  }
+
+  lesson.labels.push({ text: '', ...stagePoint(event, $('edit-stage')) });
+  setMessage('');
+  save();
+  renderMarkers();
+  renderList();
+  $('label-' + (lesson.labels.length - 1)).focus();
+});
+
+function startMarkerDrag(event) {
+  if (event.button !== 0 || markerDrag) return;
+
+  const marker = event.currentTarget;
+
+  markerDrag = { marker, pointer: event.pointerId, moved: false };
+  marker.setPointerCapture(event.pointerId);
+  marker.addEventListener('pointermove', moveMarker);
+  marker.addEventListener('pointerup', endMarkerDrag);
+  marker.addEventListener('pointercancel', endMarkerDrag);
+}
+
+function moveMarker(event) {
+  if (!markerDrag || event.pointerId !== markerDrag.pointer) return;
+
+  const label = lesson.labels[Number(markerDrag.marker.dataset.index)];
+  const point = stagePoint(event, $('edit-stage'));
+
+  event.preventDefault();
+  markerDrag.moved = true;
+  label.x = point.x;
+  label.y = point.y;
+  markerDrag.marker.style.left = point.x + '%';
+  markerDrag.marker.style.top = point.y + '%';
+}
+
+function endMarkerDrag(event) {
+  if (!markerDrag || event.pointerId !== markerDrag.pointer) return;
+
+  const { marker, moved } = markerDrag;
+
+  markerDrag = null;
+  marker.removeEventListener('pointermove', moveMarker);
+  marker.removeEventListener('pointerup', endMarkerDrag);
+  marker.removeEventListener('pointercancel', endMarkerDrag);
+
+  if (moved) {
+    // Releasing a dragged spot should not also add a new one.
+    suppressAdd = true;
+    setTimeout(() => { suppressAdd = false; }, 200);
+    save();
+  }
+}
+
+function replaceLesson(next, message) {
+  lesson = next;
+  activity = null;
+  selected = null;
+  renderEditor();
+
+  if (save()) setMessage(message, true);
+  else setMessage(
+    message + ' It is too large to save in this browser, so export it ' +
+    'before closing this page.'
+  );
+}
+
+function useExample(name) {
+  const load = () => replaceLesson(
+    exampleLesson(name),
+    'Loaded the example. Change the labels to suit your lesson.'
+  );
+
+  if (lesson.labels.length && lesson.picture !== name) {
+    ask(
+      'Replace this lesson?',
+      'The current picture and its labels will be replaced by the example.',
+      load
+    );
+  } else {
+    load();
+  }
+}
+
+$('use-plant').onclick = () => useExample('plant');
+$('use-water').onclick = () => useExample('water');
+
+// Shrink an uploaded picture so it fits comfortably in browser storage.
+async function readPicture(file) {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Choose a picture file, such as a PNG or JPEG.');
+  }
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error('That picture is too large. Choose one under 30 MB.');
+  }
+
+  const url = URL.createObjectURL(file);
+
+  try {
+    const image = new Image();
+
+    image.src = url;
+    await image.decode();
+
+    const width = image.naturalWidth;
+    const height = image.naturalHeight;
+
+    if (!width || !height) throw new Error('unreadable');
+
+    const scale = Math.min(1, MAX_SIDE / Math.max(width, height));
+    const canvas = document.createElement('canvas');
+
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+
+    const context = canvas.getContext('2d');
+
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const data = canvas.toDataURL('image/jpeg', .86);
+
+    if (!validImage(data)) throw new Error('unreadable');
+    return data;
+  } catch (error) {
+    throw new Error('That picture could not be read. Try a PNG or JPEG.');
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+$('upload').onclick = () => {
+  if (fileBusy) return;
+  $('upload-file').value = '';
+  $('upload-file').click();
+};
+
+$('upload-file').onchange = async event => {
+  const file = event.target.files[0];
+
+  if (!file || fileBusy) return;
+
+  fileBusy = true;
+  setMessage('Preparing the picture…', true);
+
+  try {
+    const image = await readPicture(file);
+
+    replaceLesson(
+      {
+        title: lesson.picture === 'custom' ? lesson.title : '',
+        picture: 'custom',
+        image,
+        labels: []
+      },
+      'Picture ready. Tap it to add your first label.'
+    );
+  } catch (error) {
+    setMessage(error.message);
+  } finally {
+    fileBusy = false;
+    $('upload-file').value = '';
+  }
+};
+
+$('export').onclick = () => {
+  const blob = new Blob(
+    [JSON.stringify({ format: FILE_FORMAT, version: FILE_VERSION, lesson })],
+    { type: 'application/json;charset=utf-8' }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  const filename = (lesson.title || 'diagram')
+    .replace(/[^a-z0-9_-]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'diagram';
+
+  link.href = url;
+  link.download = filename + '.label-the-diagram.json';
+  document.body.append(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  setMessage('Lesson file download requested.', true);
+};
+
+function parseLessonFile(text) {
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error('This file is not valid JSON.');
+  }
+
+  if (!data || data.format !== FILE_FORMAT || data.version !== FILE_VERSION) {
+    throw new Error('Choose a Label the Diagram file exported by this page.');
+  }
+
+  if (!validLesson(data.lesson)) {
+    throw new Error(
+      'The file contains missing, invalid, or oversized lesson data.'
+    );
+  }
+
+  // Build a fresh object using only the expected fields.
+  return {
+    title: data.lesson.title.trim(),
+    picture: data.lesson.picture,
+    image: data.lesson.image,
+    labels: data.lesson.labels.map(label => ({
+      text: label.text.trim(),
+      x: label.x,
+      y: label.y
+    }))
+  };
+}
+
+$('import').onclick = () => {
+  if (fileBusy) return;
+  $('import-file').value = '';
+  $('import-file').click();
+};
+
+$('import-file').onchange = async event => {
+  const file = event.target.files[0];
+
+  if (!file || fileBusy) return;
+
+  if (file.size > MAX_FILE_BYTES) {
+    setMessage('The file is too large. Choose a lesson file under 8 MB.');
+    return;
+  }
+
+  fileBusy = true;
+
+  try {
+    replaceLesson(
+      parseLessonFile(await file.text()),
+      'Lesson imported. Press Start activity when you are ready.'
+    );
+  } catch (error) {
+    setMessage('Import failed. ' + error.message);
+  } finally {
+    fileBusy = false;
+    $('import-file').value = '';
+  }
+};
+
+$('title').addEventListener('input', () => {
+  lesson.title = $('title').value;
+  save();
+});
+
+$('shuffle').addEventListener('change', () => {
+  settings.shuffle = $('shuffle').checked;
+  save();
+});
+
+// ---- The activity ----
+
+function start() {
+  lesson.title = $('title').value.trim();
+  lesson.labels.forEach(label => { label.text = label.text.trim(); });
+
+  if (lesson.labels.length < 2) {
+    setMessage('Add at least two labels by tapping the picture.');
+    return;
+  }
+
+  const blank = lesson.labels.findIndex(label => !label.text);
+
+  if (blank >= 0) {
+    renderList();
+    setMessage('Give spot ' + (blank + 1) + ' a name, or remove it.');
+    $('label-' + blank).focus();
+    return;
+  }
+
+  const tiles = lesson.labels.map((label, index) => ({ label: index, at: null }));
+
+  activity = {
+    status: 'active',
+    tiles: settings.shuffle ? shuffled(tiles) : tiles,
+    failedChecks: 0,
+    lastSig: null
+  };
+
+  selected = null;
+  setMessage('');
+  save();
+  render();
+}
+
+const nameOf = tile => lesson.labels[tile.label].text;
+const isRight = tile =>
+  tile.at !== null && same(nameOf(tile), lesson.labels[tile.at].text);
+const signature = () =>
+  activity.tiles.map(tile => tile.label + '=' + tile.at).join('|');
+
+function counts() {
+  let correct = 0;
+  let wrong = 0;
+  let bank = 0;
+
+  activity.tiles.forEach(tile => {
+    if (tile.at === null) bank++;
+    else if (isRight(tile)) correct++;
+    else wrong++;
+  });
+
+  return { correct, wrong, bank };
+}
+
+function tileButton(tile, index) {
+  const button = document.createElement('button');
+
+  button.type = 'button';
+  button.className = 'tile';
+  button.textContent = nameOf(tile);
+  button.dataset.tile = index;
+  button.setAttribute('aria-pressed', String(selected === index));
+
+  button.setAttribute(
+    'aria-label',
+    nameOf(tile) + (tile.at === null
+      ? ', in the word bank'
+      : ', placed at spot ' + (tile.at + 1))
+  );
+
+  if (activity.lastSig !== null && tile.at !== null) {
+    button.classList.add(isRight(tile) ? 'good' : 'bad');
+  }
+
+  button.addEventListener('pointerdown', startDrag);
+
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    if (suppressClick) return;
+
+    // With another name chosen, tapping a placed name swaps it out.
+    if (selected !== null && selected !== index && tile.at !== null) {
+      place(selected, tile.at);
+      return;
+    }
+
+    selected = selected === index ? null : index;
+    refresh();
+
+    announce(selected === null
+      ? 'Selection cleared.'
+      : 'Selected ' + nameOf(tile) + '. Choose a box on the picture.');
+  });
+
+  return button;
+}
+
+function refresh() {
+  $('holders').replaceChildren(...lesson.labels.map((label, spot) => {
+    const at = activity.tiles.findIndex(tile => tile.at === spot);
+    const holder = document.createElement('div');
+
+    holder.className = 'holder' + (at >= 0 ? ' filled' : '');
+    holder.dataset.drop = 'holder';
+    holder.dataset.spot = spot;
+    holder.style.left = label.x + '%';
+    holder.style.top = label.y + '%';
+
+    if (at >= 0) {
+      holder.append(tileButton(activity.tiles[at], at));
+    } else {
+      const target = document.createElement('button');
+
+      target.type = 'button';
+      target.className = 'spot';
+      target.textContent = '?';
+      target.setAttribute('aria-label', 'Empty box ' + (spot + 1));
+
+      target.onclick = () => {
+        if (suppressClick) return;
+        if (selected !== null) place(selected, spot);
+        else announce('Choose a name from the word bank first.');
+      };
+
+      holder.append(target);
+    }
+
+    return holder;
+  }));
+
+  const inBank = activity.tiles
+    .map((tile, index) => ({ tile, index }))
+    .filter(entry => entry.tile.at === null);
+
+  $('bank-list').replaceChildren(
+    ...inBank.map(entry => tileButton(entry.tile, entry.index))
+  );
+
+  if (!inBank.length) {
+    const note = document.createElement('div');
+    note.className = 'empty';
+    note.textContent = 'Every name is on the picture. Check them, or move any name again.';
+    $('bank-list').append(note);
+  }
+
+  const chosen = selected === null ? null : activity.tiles[selected];
+  const tally = counts();
+  const done = tally.correct === activity.tiles.length;
+
+  $('bank-count').textContent = inBank.length + ' remaining';
+
+  $('selected-name').textContent = chosen
+    ? 'Selected: ' + nameOf(chosen) + ' · Tap a box on the picture to place it.'
+    : 'Choose a name from the word bank below.';
+
+  $('return-label').disabled = !chosen || chosen.at === null;
+
+  $('progress').textContent =
+    (activity.tiles.length - tally.bank) + ' / ' + activity.tiles.length +
+    ' names placed';
+
+  $('check').disabled = activity.lastSig === signature();
+  $('finish').hidden = !done || activity.lastSig === null;
+
+  if (activity.lastSig === null) setFeedback('');
+  else if (done) setFeedback('Every part is labeled correctly. Well done!', 'good');
+  else setFeedback(
+    tally.correct + ' correct · ' + tally.wrong + ' need moving · ' +
+    tally.bank + ' still in the bank.',
+    tally.wrong ? 'bad' : ''
+  );
+}
+
+function render() {
+  if (!activity) { show('setup'); return; }
+  if (activity.status !== 'active') { results(); return; }
+
+  show('play');
+  $('play-image').src = pictureOf(lesson);
+  $('activity-title').textContent = lesson.title || 'Label the picture';
+  refresh();
+}
+
+function place(index, spot) {
+  if (!activity || activity.status !== 'active') return;
+
+  const tile = activity.tiles[index];
+  let displaced = '';
+
+  if (!tile) return;
+
+  if (spot !== null) {
+    const other = activity.tiles.find(
+      (entry, at) => entry.at === spot && at !== index
+    );
+
+    if (other) {
+      other.at = null;
+      displaced = ' ' + nameOf(other) + ' returned to the bank.';
+    }
+  }
+
+  tile.at = spot;
+  selected = null;
+  save();
+  refresh();
+
+  announce(
+    nameOf(tile) +
+    (spot === null ? ' returned to the bank.' : ' placed on the picture.') +
+    displaced
+  );
+}
+
+function handleDrop(source, zone) {
+  const index = Number(source.dataset.tile);
+
+  if (!zone) {
+    announce('Drop the name on a box in the picture, or back in the word bank.');
+  } else if (zone.dataset.drop === 'bank') {
+    place(index, null);
+  } else {
+    place(index, Number(zone.dataset.spot));
+  }
+}
+
+$('bank').addEventListener('click', event => {
+  if (!suppressClick && selected !== null && !event.target.closest('[data-tile]')) {
+    place(selected, null);
+  }
+});
+
+$('return-label').onclick = () => {
+  if (selected !== null) place(selected, null);
+};
+
+$('check').onclick = () => {
+  const now = signature();
+
+  if (now === activity.lastSig) return;
+
+  activity.lastSig = now;
+  if (counts().correct !== activity.tiles.length) activity.failedChecks++;
+
+  save();
+  refresh();
+};
+
+$('finish').onclick = () => {
+  if (counts().correct === activity.tiles.length) {
+    activity.status = 'complete';
+    save();
+    results();
+  }
+};
+
+$('reset').onclick = () => ask(
+  'Reset the labels?',
+  'Return every name to the bank? Your correction-check count will be kept.',
+  () => {
+    cancelDrag();
+    activity.tiles.forEach(tile => { tile.at = null; });
+    activity.lastSig = null;
+    selected = null;
+    save();
+    refresh();
+  }
+);
+
+$('end').onclick = () => ask(
+  'End this activity?',
+  'Show the results for the picture as it is now?',
+  () => {
+    cancelDrag();
+    activity.status = 'ended';
+    save();
+    results();
+  }
+);
+
+$('again').onclick = () => start();
+
+$('back').onclick = () => {
+  activity = null;
+  selected = null;
+  save();
+  renderEditor();
+  show('setup');
+};
+
+function results() {
+  show('results');
+
+  const tally = counts();
+
+  $('results-title').textContent =
+    activity.status === 'complete' ? 'Fully labeled!' : 'Activity ended';
+
+  $('results-description').textContent =
+    'Checks with missing or misplaced names count as checks needing ' +
+    'correction. Boxes that share a name accept either copy.';
+
+  showStats([
+    ['Correct names', tally.correct],
+    ['Names to place or move', tally.wrong + tally.bank],
+    ['Checks needing correction', activity.failedChecks]
+  ]);
+
+  showRows(activity.tiles.map(tile => [
+    nameOf(tile),
+    tile.at === null ? 'Word bank' : 'Box ' + (tile.at + 1),
+    tile.at === null ? 'Not placed' : isRight(tile) ? 'Correct' : 'Needs moving'
+  ]));
+}
+
+$('setup-form').onsubmit = event => {
+  event.preventDefault();
+  start();
+};
+
+$('edit-image').addEventListener('error', () => {
+  setMessage('The picture could not be shown. Upload it again.');
+});
+
+renderEditor();
+render();
+</script>
+</body>
+</html>

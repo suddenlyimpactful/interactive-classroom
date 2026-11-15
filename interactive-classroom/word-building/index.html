@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build words from draggable letters, chunks, prefixes, and suffixes using your own word list. An Interactive Classroom activity.">
+<title>Word Building · Interactive Classroom</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: #223e38;
+    background: #f6f7f2;
+  }
+
+  body { margin: 0; }
+  button, input, select, textarea { font: inherit; }
+  [hidden] { display: none !important; }
+
+  button, a.home {
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 1px solid #ced8d0;
+    border-radius: 10px;
+    background: white;
+    color: #29483e;
+    font-weight: 650;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  button:hover, a.home:hover { background: #edf3ed; }
+  button:disabled { opacity: .48; cursor: default; }
+
+  button:focus-visible, a:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 3px solid #b98b24;
+    outline-offset: 4px;
+  }
+
+  .primary { background: #285f4c; border-color: #285f4c; color: white; }
+  .primary:hover { background: #174d3a; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 22px 4vw;
+    background: #fffef9;
+    border-bottom: 1px solid #dce2d8;
+  }
+
+  header strong { display: block; font-size: 25px; }
+  small, .muted { color: #687b70; line-height: 1.6; }
+  .home { display: inline-flex; align-items: center; text-decoration: none; }
+  .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .center { justify-content: center; }
+
+  main { max-width: 1400px; margin: auto; padding: 28px 3vw; }
+  h1 { font-size: clamp(28px, 4vw, 42px); letter-spacing: -1px; margin: 0 0 10px; }
+  h2 { font-size: 21px; margin: 0 0 12px; }
+  h3 { font-size: 17px; margin: 0 0 10px; }
+  p { line-height: 1.6; color: #687b70; margin: 0 0 14px; }
+
+  .panel {
+    margin-top: 22px;
+    padding: clamp(20px, 3vw, 32px);
+    background: #fffefa;
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+  }
+
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .row { display: flex; gap: 15px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 120px; }
+  .field { margin-bottom: 20px; }
+
+  label { display: block; font-weight: 650; font-size: 14px; margin-bottom: 8px; }
+
+  input:not([type=checkbox]):not([type=file]), select, textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px;
+    border: 1px solid #cbd6c7;
+    border-radius: 8px;
+    color: #223e38;
+    background: white;
+  }
+
+  textarea { min-height: 220px; line-height: 1.5; resize: vertical; }
+
+  .check { display: flex; align-items: center; gap: 12px; min-height: 46px; }
+  .check input { width: 22px; height: 22px; accent-color: #285f4c; flex-shrink: 0; }
+  .check label { margin: 0; cursor: pointer; }
+  .nested { padding-left: 34px; }
+
+  .notice { min-height: 26px; color: #a34539; margin-top: 14px; }
+  .notice.ok { color: #28633e; }
+
+  .topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .badge { background: #e6eddf; border-radius: 25px; padding: 10px 17px; font-size: 14px; }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #687b70;
+  }
+
+  .question { text-align: center; padding: 20px 0 8px; }
+
+  .prompt {
+    font-size: clamp(46px, 7vw, 84px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.2;
+    margin: 6px 0 12px;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  /* Draggable tiles and the places they can be dropped. */
+  .tile {
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 2px solid #adc3ad;
+    border-radius: 9px;
+    background: #fffefa;
+    box-shadow: 0 3px 0 #dce1d4;
+    font-size: 22px;
+    line-height: 1.3;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .tile[aria-pressed=true] { outline: 3px solid #c7942f; outline-offset: 3px; }
+  .tile.good { background: #e5f3e4; border-color: #418251; }
+  .tile.bad { background: #fff0eb; border-color: #bb6658; }
+
+  .bank {
+    margin-top: 18px;
+    padding: 22px;
+    border: 2px dashed #c6d2bd;
+    border-radius: 16px;
+    background: #eef1e8;
+    min-width: 0;
+  }
+
+  .bank-list {
+    display: flex;
+    gap: 13px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    min-height: 60px;
+  }
+
+  .over { background: #fff4d2; box-shadow: 0 0 0 4px #e0be62; }
+  .source-drag { opacity: .3; }
+
+  .ghost {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: .96;
+    transform: rotate(-4deg);
+    margin: 0;
+    max-width: 320px;
+    box-shadow: 0 12px 30px #223e3833;
+  }
+
+  .empty { color: #7c8c7f; font-size: 14px; line-height: 1.6; padding: 14px 0; pointer-events: none; }
+
+  .selection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+    padding: 12px 16px;
+    border: 1px solid #eadfbe;
+    border-radius: 11px;
+    background: #fff9e9;
+    color: #7d5d24;
+    line-height: 1.5;
+  }
+
+  .feedback {
+    min-height: 68px;
+    padding: 19px 5px;
+    text-align: center;
+    font-size: 21px;
+    font-weight: 650;
+  }
+
+  .feedback.good { color: #28633e; }
+  .feedback.bad { color: #a34539; }
+
+  .stats { display: flex; gap: 15px; flex-wrap: wrap; margin: 24px 0; }
+  .stat { flex: 1; min-width: 150px; padding: 20px; background: #eef1e8; border-radius: 12px; }
+  .stat strong { display: block; font-size: 34px; }
+
+  .table-wrap { overflow: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #dce2d8; }
+
+  dialog {
+    width: min(460px, calc(100% - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    padding: 28px;
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+    background: #fffefa;
+    color: #223e38;
+    box-shadow: 0 20px 80px #223e3840;
+  }
+
+  dialog::backdrop { background: #14281e88; }
+
+  footer { text-align: center; color: #708076; font-size: 13px; line-height: 1.6; padding: 25px 0; }
+  footer a { color: inherit; }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  @media (max-width: 850px) {
+    .setup-grid { grid-template-columns: 1fr; }
+    .tile { font-size: 19px; }
+    main { padding: 24px 14px; }
+  }
+
+  .tray {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    min-height: 110px;
+    margin-top: 12px;
+    padding: 22px;
+    background: #fffdfa;
+    border: 3px dashed #b69b72;
+    border-radius: 18px;
+    transition: background .15s, box-shadow .15s;
+  }
+
+  .tile.part { min-width: 58px; min-height: 64px; font-size: clamp(26px, 3.4vw, 40px); font-weight: 700; }
+  .tile.part.extra-wide { font-size: clamp(22px, 2.6vw, 32px); }
+
+  .gap {
+    width: 58px;
+    height: 64px;
+    border: 2px dashed #cfd8c8;
+    border-radius: 9px;
+    pointer-events: none;
+  }
+
+  .tray-note { width: 100%; text-align: center; color: #8e9b8b; pointer-events: none; }
+  .bank-list { justify-content: center; }
+  .clue { font-size: clamp(22px, 3vw, 32px); font-weight: 650; color: #223e38; margin: 6px 0 12px; }
+  .prompt.small { font-size: clamp(34px, 5vw, 60px); }
+  .question .actions { margin-top: 14px; }
+  .tools { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .help-toggle {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    min-height: 0;
+    padding: 0;
+    border-radius: 50%;
+    border-color: #c7942f;
+    background: #fff9e9;
+    color: #7d5d24;
+    font-size: 19px;
+  }
+
+  .help-toggle:hover, .help-toggle[aria-expanded=true] { background: #fff4d2; }
+
+  .help-note {
+    margin: 4px 0 12px;
+    padding: 12px 16px;
+    border: 1px solid #eadfbe;
+    border-radius: 11px;
+    background: #fff9e9;
+    color: #7d5d24;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <strong>Word Building</strong>
+    <small>Interactive Classroom · Piece by piece, words take shape.</small>
+  </div>
+  <div class="actions">
+    <a class="home" href="../">Classroom home</a>
+    <button id="fullscreen" type="button">Full screen</button>
+  </div>
+</header>
+
+<main>
+  <section id="setup-view">
+    <h1>What can you build?</h1>
+    <p>Enter your words, choose how they are prompted, and build them piece by piece.</p>
+
+    <form id="setup-form" class="panel">
+      <div class="setup-grid">
+        <div>
+          <label for="list">Word list · one word per line</label>
+          <textarea id="list" spellcheck="false"
+            placeholder="c-a-t&#10;sh-i-p&#10;un-happy = not happy"></textarea>
+          <small>
+            Use hyphens to choose the pieces: <strong>sh-i-p</strong> makes
+            three tiles and <strong>un-happy</strong> makes two. A word with
+            no hyphens is split into single letters. To add a clue, follow
+            the word with <strong>=</strong> and the clue, such as
+            <strong>re-play = play again</strong>. Up to 200 words.
+          </small>
+        </div>
+
+        <div>
+          <div class="check">
+            <input id="show-clue" type="checkbox">
+            <label for="show-clue">Show the clue, when a word has one</label>
+          </div>
+
+          <div class="check">
+            <input id="speak" type="checkbox">
+            <label for="speak">Offer a “Hear the word” button</label>
+            <button id="voice-help" class="help-toggle" type="button" hidden
+              aria-expanded="false" aria-controls="voice-note"
+              aria-label="About the voice this browser uses"
+              title="About the voice this browser uses">!</button>
+          </div>
+          <p id="voice-note" class="help-note" hidden>
+            No built-in voice was found in this browser, so it may send
+            each word to an external server to be read aloud. “Hear the
+            word” is left off unless you turn it on.
+          </p>
+
+          <div class="check">
+            <input id="show-word" type="checkbox">
+            <label for="show-word">Show the finished word to copy</label>
+          </div>
+
+          <div class="field" style="margin-top:18px">
+            <label for="extra">Extra tiles that do not belong</label>
+            <select id="extra">
+              <option value="0">None</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="6">6</option>
+            </select>
+          </div>
+
+          <div class="check">
+            <input id="shuffle" type="checkbox">
+            <label for="shuffle">Shuffle the word order when starting</label>
+          </div>
+
+          <div class="check">
+            <input id="allow" type="checkbox">
+            <label for="allow">Allow corrections</label>
+          </div>
+
+          <div class="check nested">
+            <input id="force" type="checkbox">
+            <label for="force">Require a correct answer before continuing</label>
+          </div>
+
+          <p style="margin-top:18px"><small>
+            <span id="speech-note"></span> A word with nothing else to
+            prompt it is always shown, so students are never left guessing.
+            Extra tiles come from the other words in your list.
+          </small></p>
+
+          <h2 style="margin-top:26px">Share this list</h2>
+          <div class="tools">
+            <button id="export" type="button">↓ Export word list</button>
+            <button id="import" type="button">↑ Import word list</button>
+          </div>
+          <p style="margin-top:10px"><small>
+            Save the list as a file to reuse later or share with another teacher.
+          </small></p>
+          <input id="import-file" type="file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+
+      <button class="primary" type="submit" style="margin-top:20px">Start activity</button>
+      <div id="setup-message" class="notice" role="status"></div>
+    </form>
+  </section>
+
+  <section id="play-view" hidden>
+    <div class="topline">
+      <span class="badge" id="progress"></span>
+      <button id="end" type="button">End activity</button>
+    </div>
+
+    <div class="question">
+      <div class="eyebrow" id="prompt-label"></div>
+      <div class="prompt small" id="prompt"></div>
+      <div class="clue" id="clue"></div>
+      <div class="actions center">
+        <button id="hear" type="button">🔊 Hear the word</button>
+      </div>
+    </div>
+
+    <section class="tray" id="tray" data-drop="tray" aria-label="Your word"></section>
+
+    <section class="bank" id="bank" data-drop="bank" aria-label="Tile bank">
+      <div class="topline">
+        <h2>Tiles</h2>
+        <button id="clear" type="button">Return all tiles</button>
+      </div>
+      <p><small>Tap a tile to add it to the end of your word, or drag it into place. Tap a tile in your word to take it back out.</small></p>
+      <div class="bank-list" id="bank-list"></div>
+    </section>
+
+    <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+
+    <div class="actions center">
+      <button id="check" class="primary" type="button">Check word</button>
+      <button id="next" type="button" hidden>Next word</button>
+    </div>
+  </section>
+
+  <section id="results-view" class="panel" hidden>
+    <h1 id="results-title"></h1>
+    <p id="results-description"></p>
+    <div class="stats" id="stats"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Word</th>
+            <th>Pieces</th>
+            <th>Last checked answer</th>
+            <th>Incorrect attempts</th>
+            <th>Outcome</th>
+          </tr>
+        </thead>
+        <tbody id="result-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="actions" style="margin-top:24px">
+      <button id="again" class="primary" type="button">Play again</button>
+      <button id="back" type="button">Back to setup</button>
+    </div>
+  </section>
+
+  <footer><span id="save-status">Settings and progress save in this browser on this device.</span></footer>
+  <div id="announce" class="sr" aria-live="polite"></div>
+</main>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-message"></p>
+    <div class="actions" style="justify-content:flex-end;margin-top:24px">
+      <button value="cancel" autofocus>Cancel</button>
+      <button value="yes" class="primary">Continue</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+
+const SAVED_TEXT = 'Settings and progress save in this browser on this device.';
+
+function shuffled(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function announce(text) {
+  $('announce').textContent = text;
+}
+
+// Everything is kept in this browser; nothing is sent to a server.
+function readStored(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeStored(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    $('save-status').textContent = SAVED_TEXT;
+    return true;
+  } catch (error) {
+    $('save-status').textContent =
+      'Browser storage is unavailable or full. This session cannot be saved.';
+    return false;
+  }
+}
+
+// An on-page confirmation that also works in full screen.
+let pendingAction = null;
+
+function ask(title, message, action) {
+  $('confirm-title').textContent = title;
+  $('confirm-message').textContent = message;
+  pendingAction = action;
+
+  const dialog = $('confirm-dialog');
+  dialog.returnValue = 'cancel';
+  if (!dialog.open) dialog.showModal();
+}
+
+$('confirm-dialog').addEventListener('close', () => {
+  const action = pendingAction;
+  pendingAction = null;
+  if ($('confirm-dialog').returnValue === 'yes') action?.();
+});
+
+$('fullscreen').onclick = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (error) {
+    $('save-status').textContent =
+      'Full screen is unavailable. Use your browser’s full-screen command.';
+  }
+};
+
+document.addEventListener('fullscreenchange', () => {
+  $('fullscreen').textContent =
+    document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+});
+
+function show(view) {
+  ['setup', 'play', 'results'].forEach(name => {
+    $(name + '-view').hidden = name !== view;
+  });
+}
+
+function setFeedback(text, kind = '') {
+  $('feedback').textContent = text;
+  $('feedback').className = 'feedback' + (kind ? ' ' + kind : '');
+}
+
+function showStats(stats) {
+  $('stats').replaceChildren(...stats.map(([label, value]) => {
+    const box = document.createElement('div');
+    const strong = document.createElement('strong');
+    box.className = 'stat';
+    strong.textContent = value;
+    box.append(strong, document.createTextNode(label));
+    return box;
+  }));
+}
+
+// Cells may be plain text or ready-made elements.
+function showRows(rows) {
+  $('result-rows').replaceChildren(...rows.map(cells => {
+    const row = document.createElement('tr');
+    cells.forEach(value => {
+      const cell = document.createElement('td');
+      cell.append(value instanceof Node ? value : String(value));
+      row.append(cell);
+    });
+    return row;
+  }));
+}
+
+// Pointer Events cover finger, pen, and mouse dragging. Each page supplies
+// handleDrop(source, zone, event), where zone is the [data-drop] element
+// under the pointer, or null.
+let drag = null;
+let suppressClick = false;
+
+function dropZoneAt(x, y) {
+  return document.elementFromPoint(x, y)?.closest('[data-drop]') || null;
+}
+
+function clearHover() {
+  document.querySelectorAll('.over').forEach(element =>
+    element.classList.remove('over')
+  );
+}
+
+function startDrag(event) {
+  if (event.button !== 0 || drag) return;
+
+  const source = event.currentTarget;
+
+  drag = {
+    source,
+    pointer: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+    ghost: null
+  };
+
+  source.setPointerCapture(event.pointerId);
+  source.addEventListener('pointermove', moveDrag);
+  source.addEventListener('pointerup', endDrag);
+  source.addEventListener('pointercancel', cancelDrag);
+  source.addEventListener('lostpointercapture', cancelDrag);
+}
+
+function moveDrag(event) {
+  if (!drag || event.pointerId !== drag.pointer) return;
+
+  if (
+    !drag.ghost &&
+    Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 8
+  ) {
+    const rect = drag.source.getBoundingClientRect();
+
+    drag.ghost = drag.source.cloneNode(true);
+    drag.ghost.removeAttribute('id');
+    drag.ghost.classList.add('ghost');
+    drag.ghost.style.width = rect.width + 'px';
+    drag.ghost.setAttribute('aria-hidden', 'true');
+
+    document.body.append(drag.ghost);
+    drag.source.classList.add('source-drag');
+  }
+
+  if (!drag.ghost) return;
+
+  event.preventDefault();
+
+  drag.ghost.style.left =
+    (event.clientX - drag.ghost.offsetWidth / 2) + 'px';
+  drag.ghost.style.top =
+    (event.clientY - drag.ghost.offsetHeight / 2) + 'px';
+
+  clearHover();
+
+  const zone = dropZoneAt(event.clientX, event.clientY);
+  if (zone && !zone.contains(drag.source)) zone.classList.add('over');
+
+  if (event.clientY > innerHeight - 70) window.scrollBy(0, 18);
+  if (event.clientY < 70) window.scrollBy(0, -18);
+}
+
+function cancelDrag() {
+  if (!drag) return;
+
+  const current = drag;
+  drag = null;
+
+  current.ghost?.remove();
+  current.source.classList.remove('source-drag');
+  current.source.removeEventListener('pointermove', moveDrag);
+  current.source.removeEventListener('pointerup', endDrag);
+  current.source.removeEventListener('pointercancel', cancelDrag);
+  current.source.removeEventListener('lostpointercapture', cancelDrag);
+
+  if (current.source.hasPointerCapture(current.pointer)) {
+    current.source.releasePointerCapture(current.pointer);
+  }
+
+  clearHover();
+}
+
+function endDrag(event) {
+  if (!drag || event.pointerId !== drag.pointer) return;
+
+  const current = drag;
+  const moved = Boolean(current.ghost);
+  const zone = dropZoneAt(event.clientX, event.clientY);
+
+  cancelDrag();
+
+  if (moved) {
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 200);
+    handleDrop(current.source, zone, event);
+  }
+}
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && drag) {
+    cancelDrag();
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 200);
+  }
+});
+
+const KEY = 'interactive-word-building-v1';
+const FILE_FORMAT = 'interactive-word-building';
+const FILE_VERSION = 1;
+const MAX_FILE_BYTES = 1024 * 1024;
+const MAX_WORDS = 200;
+const MAX_WORD_LENGTH = 40;
+const MAX_CLUE_LENGTH = 120;
+const MAX_PIECES = 20;
+
+const LANGUAGE = (document.documentElement.lang || 'en').toLowerCase();
+
+const canSpeak = Boolean(window.speechSynthesis) &&
+  typeof window.SpeechSynthesisUtterance === 'function';
+
+const defaults = {
+  list: 'c-a-t\nsh-i-p\nun-happy = not happy\nre-play = play again\n' +
+    'jump-ing\nrain-bow\nfriend',
+  showClue: true,
+  speak: null,   // null: on only when a built-in voice is found
+  showWord: false,
+  extra: '2',
+  shuffle: true,
+  allow: true,
+  force: false
+};
+
+let settings = { ...defaults };
+let activity = null;
+let importBusy = false;
+let speakChosen = false;   // true once a teacher sets “Hear the word”
+
+function validSettings(s) {
+  return s &&
+    typeof s.list === 'string' && s.list.length <= 20000 &&
+    ['0', '1', '2', '3', '4', '6'].includes(s.extra) &&
+    ['showClue', 'showWord', 'shuffle', 'allow', 'force']
+      .every(key => typeof s[key] === 'boolean') &&
+    (s.speak === null || typeof s.speak === 'boolean') &&
+    (!s.force || s.allow);
+}
+
+// Turn the teacher's list into words, pieces, and optional clues.
+function parseWords(text) {
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+
+  if (!lines.length) throw new Error('Enter at least one word.');
+  if (lines.length > MAX_WORDS) {
+    throw new Error('Use no more than ' + MAX_WORDS + ' words.');
+  }
+
+  return lines.map((line, index) => {
+    const where = 'Line ' + (index + 1) + ' ("' + line.slice(0, 30) + '")';
+    const split = line.search(/[=|]/);
+    const written = (split < 0 ? line : line.slice(0, split)).trim();
+    const clue = split < 0 ? '' : line.slice(split + 1).trim();
+
+    let pieces = written.split(/[-\s]+/).filter(Boolean);
+    if (pieces.length === 1) pieces = Array.from(pieces[0]);
+
+    const word = written.replace(/-/g, '').replace(/\s+/g, ' ');
+
+    if (pieces.length < 2) {
+      throw new Error(where + ' needs a word with at least two letters.');
+    }
+
+    if (word.length > MAX_WORD_LENGTH || pieces.length > MAX_PIECES) {
+      throw new Error(
+        where + ' is too long. Use up to ' + MAX_WORD_LENGTH +
+        ' characters and ' + MAX_PIECES + ' pieces.'
+      );
+    }
+
+    if (clue.length > MAX_CLUE_LENGTH) {
+      throw new Error(
+        where + ' has a clue longer than ' + MAX_CLUE_LENGTH + ' characters.'
+      );
+    }
+
+    return { word, pieces, clue };
+  });
+}
+
+const joined = pieces => pieces.join('').toLowerCase();
+
+// Tiles for one word: its own pieces plus a few that do not belong.
+function tilesFor(words, index, extra) {
+  const entry = words[index];
+  const letters = entry.pieces.every(piece => Array.from(piece).length === 1);
+  const taken = new Set(entry.pieces.map(piece => piece.toLowerCase()));
+  const spare = [];
+
+  shuffled(
+    words.flatMap((other, at) => at === index ? [] : other.pieces)
+  ).forEach(piece => {
+    const key = piece.toLowerCase();
+    const single = Array.from(piece).length === 1;
+
+    if (!taken.has(key) && single === letters && spare.length < extra) {
+      taken.add(key);
+      spare.push(piece);
+    }
+  });
+
+  // Letter words can always borrow from the alphabet.
+  if (letters) {
+    shuffled(Array.from('abcdefghijklmnopqrstuvwxyz')).forEach(letter => {
+      if (!taken.has(letter) && spare.length < extra) {
+        taken.add(letter);
+        spare.push(letter);
+      }
+    });
+  }
+
+  return shuffled([...entry.pieces, ...spare])
+    .map((text, id) => ({ id, text }));
+}
+
+function validActivity(a) {
+  if (
+    !a ||
+    !validSettings(a.config) ||
+    !['active', 'complete', 'ended'].includes(a.status) ||
+    !Array.isArray(a.questions) ||
+    a.questions.length < 1 ||
+    a.questions.length > MAX_WORDS ||
+    !Number.isInteger(a.index) ||
+    a.index < 0 ||
+    a.index >= a.questions.length
+  ) return false;
+
+  return a.questions.every(q =>
+    q &&
+    typeof q.word === 'string' && q.word.length <= MAX_WORD_LENGTH &&
+    typeof q.clue === 'string' && q.clue.length <= MAX_CLUE_LENGTH &&
+    Array.isArray(q.pieces) &&
+    q.pieces.length >= 2 && q.pieces.length <= MAX_PIECES &&
+    q.pieces.every(piece => typeof piece === 'string' && piece) &&
+    Array.isArray(q.tiles) &&
+    q.tiles.length >= q.pieces.length &&
+    q.tiles.length <= MAX_PIECES + 6 &&
+    q.tiles.every((tile, id) =>
+      tile && tile.id === id && typeof tile.text === 'string' && tile.text
+    ) &&
+    Array.isArray(q.tray) &&
+    new Set(q.tray).size === q.tray.length &&
+    q.tray.every(id => Number.isInteger(id) && id >= 0 && id < q.tiles.length) &&
+    (q.last === null || typeof q.last === 'string') &&
+    (q.lastSig === null || typeof q.lastSig === 'string') &&
+    (q.last === null) === (q.lastSig === null) &&
+    Number.isInteger(q.wrong) && q.wrong >= 0 &&
+    typeof q.correct === 'boolean'
+  );
+}
+
+const saved = readStored(KEY);
+
+if (saved?.version === 1 && validSettings(saved.settings)) {
+  settings = saved.settings;
+  if (validActivity(saved.activity)) activity = saved.activity;
+}
+
+function save() {
+  writeStored(KEY, { version: 1, settings, activity });
+}
+
+function readSettings() {
+  return {
+    list: $('list').value,
+    showClue: $('show-clue').checked,
+    speak: speakChosen ? $('speak').checked : null,
+    showWord: $('show-word').checked,
+    extra: $('extra').value,
+    shuffle: $('shuffle').checked,
+    allow: $('allow').checked,
+    force: $('allow').checked && $('force').checked
+  };
+}
+
+function sync() {
+  $('force').disabled = !$('allow').checked;
+  if (!$('allow').checked) $('force').checked = false;
+}
+
+function fillSettings() {
+  $('list').value = settings.list;
+  $('show-clue').checked = settings.showClue;
+  speakChosen = settings.speak !== null;
+  syncVoice();
+  $('show-word').checked = settings.showWord;
+  $('extra').value = settings.extra;
+  $('shuffle').checked = settings.shuffle;
+  $('allow').checked = settings.allow;
+  $('force').checked = settings.force;
+  sync();
+}
+
+function setMessage(text, ok = false) {
+  $('setup-message').textContent = text;
+  $('setup-message').classList.toggle('ok', ok);
+}
+
+function start() {
+  const chosen = readSettings();
+  let words;
+
+  try {
+    if (!validSettings(chosen)) throw new Error('Please check the settings.');
+    words = parseWords(chosen.list);
+  } catch (error) {
+    setMessage(error.message);
+    return;
+  }
+
+  settings = chosen;
+
+  // The activity keeps a plain yes or no for the hear-the-word button.
+  const config = { ...clone(chosen), speak: $('speak').checked };
+  const order = words.map((word, index) => index);
+
+  activity = {
+    status: 'active',
+    index: 0,
+    config,
+    questions: (chosen.shuffle ? shuffled(order) : order).map(index => ({
+      word: words[index].word,
+      pieces: words[index].pieces,
+      clue: words[index].clue,
+      tiles: tilesFor(words, index, Number(chosen.extra)),
+      tray: [],
+      last: null,
+      lastSig: null,
+      wrong: 0,
+      correct: false
+    }))
+  };
+
+  setMessage('');
+  save();
+  render();
+}
+
+const current = () => activity.questions[activity.index];
+
+const locked = () =>
+  current().correct || current().last !== null && !activity.config.allow;
+
+const canNext = () =>
+  current().last !== null && (current().correct || !activity.config.force);
+
+const built = q => q.tray.map(id => q.tiles[id].text);
+const signature = q => q.tray.join('|');
+
+// Decide what tells the student which word to build.
+function prompts(q) {
+  const c = activity.config;
+  const clue = c.showClue && q.clue ? q.clue : '';
+  const hear = c.speak === true && canSpeak;
+
+  return { clue, hear, word: c.showWord || !clue && !hear };
+}
+
+// A voice built into this device speaks without sending the word to an
+// online speech service. Returns null when the browser reports none.
+function localVoice() {
+  if (!canSpeak) return null;
+
+  return speechSynthesis.getVoices().find(voice =>
+    voice.localService && voice.lang.toLowerCase().startsWith(LANGUAGE)
+  ) || null;
+}
+
+// Set the “Hear the word” option to suit the voices this browser has.
+// Until a teacher ticks or clears the box, it follows what was found.
+function syncVoice() {
+  const local = localVoice();
+
+  $('speak').disabled = !canSpeak;
+
+  $('speak').checked = canSpeak &&
+    (speakChosen ? settings.speak === true : Boolean(local));
+
+  $('voice-help').hidden = !canSpeak || Boolean(local);
+
+  if ($('voice-help').hidden) {
+    $('voice-note').hidden = true;
+    $('voice-help').setAttribute('aria-expanded', 'false');
+  }
+
+  $('speech-note').textContent = !canSpeak
+    ? 'This browser cannot read words aloud, so “Hear the word” is unavailable.'
+    : local
+      ? '“Hear the word” uses a voice built into this device.'
+      : 'No built-in voice was found, so “Hear the word” starts switched off.';
+}
+
+function hearWord() {
+  if (!canSpeak || !activity || activity.status !== 'active') return;
+
+  const speech = new SpeechSynthesisUtterance(current().word);
+  const local = localVoice();
+
+  if (local) speech.voice = local;
+  speech.lang = local ? local.lang : LANGUAGE;
+  speech.rate = .8;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(speech);
+}
+
+function tileButton(q, id, placed) {
+  const tile = q.tiles[id];
+  const button = document.createElement('button');
+
+  button.type = 'button';
+  button.className = 'tile part' +
+    (Array.from(tile.text).length > 3 ? ' extra-wide' : '');
+  button.textContent = tile.text;
+  button.dataset.tile = id;
+  button.disabled = locked();
+
+  button.setAttribute(
+    'aria-label',
+    tile.text + (placed ? ', in your word. Tap to take it out.'
+      : ', in the tile bank. Tap to add it.')
+  );
+
+  if (placed && q.lastSig === signature(q)) {
+    button.classList.add(q.correct ? 'good' : 'bad');
+  }
+
+  button.addEventListener('pointerdown', startDrag);
+
+  button.addEventListener('click', () => {
+    if (suppressClick) return;
+    moveTile(id, placed ? null : q.tray.length);
+  });
+
+  return button;
+}
+
+function describe() {
+  const q = current();
+  const c = activity.config;
+  const recipe = q.pieces.join(' + ') + ' = ' + q.word;
+
+  if (q.correct) {
+    setFeedback('Exactly right! ' + recipe, 'good');
+  } else if (q.last !== null && signature(q) === q.lastSig) {
+    setFeedback(
+      'Not quite. ' + (
+        !c.allow ? 'The word is built like this: ' + recipe
+          : c.force ? 'Move the tiles and try again.'
+            : 'Try again, or continue.'
+      ),
+      'bad'
+    );
+  } else {
+    setFeedback(q.last !== null ? 'Tiles changed. Check your new word.' : '');
+  }
+}
+
+function refresh() {
+  const q = current();
+  const inBank = q.tiles.filter(tile => !q.tray.includes(tile.id));
+  const gaps = Math.max(0, q.pieces.length - q.tray.length);
+
+  $('tray').replaceChildren(...q.tray.map(id => tileButton(q, id, true)));
+
+  for (let n = 0; n < gaps; n++) {
+    const gap = document.createElement('span');
+    gap.className = 'gap';
+    $('tray').append(gap);
+  }
+
+  $('tray').setAttribute(
+    'aria-label',
+    'Your word: ' + (built(q).join(' ') || 'empty')
+  );
+
+  $('bank-list').replaceChildren(
+    ...inBank.map(tile => tileButton(q, tile.id, false))
+  );
+
+  if (!inBank.length) {
+    const note = document.createElement('div');
+    note.className = 'empty';
+    note.textContent = 'Every tile is in your word.';
+    $('bank-list').append(note);
+  }
+
+  $('clear').disabled = locked() || !q.tray.length;
+
+  $('check').hidden = locked();
+  $('check').disabled = !q.tray.length || signature(q) === q.lastSig;
+  $('check').textContent = q.last === null ? 'Check word' : 'Check correction';
+
+  $('next').hidden = !canNext();
+  $('next').textContent = activity.index === activity.questions.length - 1
+    ? 'See results'
+    : 'Next word';
+
+  describe();
+}
+
+function render() {
+  if (!activity) { show('setup'); return; }
+  if (activity.status !== 'active') { results(); return; }
+
+  show('play');
+
+  const q = current();
+  const prompt = prompts(q);
+
+  $('progress').textContent =
+    'Word ' + (activity.index + 1) + ' of ' + activity.questions.length;
+
+  $('prompt-label').textContent = prompt.word
+    ? 'Build this word'
+    : prompt.clue ? 'Build the word that means' : 'Listen, then build the word';
+
+  $('prompt').textContent = q.word;
+  $('prompt').hidden = !prompt.word;
+  $('clue').textContent = prompt.clue;
+  $('clue').hidden = !prompt.clue;
+  $('hear').hidden = !prompt.hear;
+
+  refresh();
+}
+
+// Put a tile at a position in the word, or back in the bank (null).
+function moveTile(id, position) {
+  if (!activity || activity.status !== 'active' || locked()) return;
+
+  const q = current();
+  const from = q.tray.indexOf(id);
+
+  if (from >= 0) {
+    q.tray.splice(from, 1);
+    if (position !== null && from < position) position--;
+  }
+
+  if (position !== null) {
+    q.tray.splice(Math.max(0, Math.min(q.tray.length, position)), 0, id);
+  }
+
+  save();
+  refresh();
+
+  announce(
+    q.tiles[id].text +
+    (position === null ? ' returned to the tile bank.' : ' added to your word.') +
+    ' Your word so far: ' + (built(q).join(' ') || 'empty') + '.'
+  );
+}
+
+function handleDrop(source, zone, event) {
+  const id = Number(source.dataset.tile);
+
+  if (!zone) return;
+  if (zone.dataset.drop === 'bank') { moveTile(id, null); return; }
+
+  // Dropping on a tile puts the piece just before or after it.
+  const q = current();
+  const under = document
+    .elementFromPoint(event.clientX, event.clientY)
+    ?.closest('[data-tile]');
+
+  if (under && $('tray').contains(under)) {
+    const box = under.getBoundingClientRect();
+    const at = q.tray.indexOf(Number(under.dataset.tile));
+
+    moveTile(id, event.clientX < box.left + box.width / 2 ? at : at + 1);
+  } else {
+    moveTile(id, q.tray.length);
+  }
+}
+
+$('hear').onclick = hearWord;
+
+$('clear').onclick = () => {
+  const q = current();
+
+  if (locked()) return;
+
+  q.tray = [];
+  save();
+  refresh();
+  announce('All tiles returned to the bank.');
+};
+
+$('check').onclick = () => {
+  const q = current();
+
+  if (locked() || !q.tray.length || signature(q) === q.lastSig) return;
+
+  q.last = built(q).join('');
+  q.lastSig = signature(q);
+  q.correct = joined(built(q)) === joined(q.pieces);
+  if (!q.correct) q.wrong++;
+
+  save();
+  refresh();
+
+  if (canNext() && locked()) $('next').focus();
+};
+
+$('next').onclick = () => {
+  if (!canNext()) return;
+
+  cancelDrag();
+  if (canSpeak) speechSynthesis.cancel();
+
+  if (activity.index === activity.questions.length - 1) {
+    activity.status = 'complete';
+  } else {
+    activity.index++;
+  }
+
+  save();
+  render();
+};
+
+$('end').onclick = () => ask(
+  'End this activity?',
+  'Show the results for the words checked so far?',
+  () => {
+    cancelDrag();
+    activity.status = 'ended';
+    save();
+    results();
+  }
+);
+
+$('back').onclick = () => {
+  activity = null;
+  fillSettings();
+  save();
+  show('setup');
+};
+
+$('again').onclick = () => {
+  // Replay with the same choices, without fixing an automatic voice setting.
+  settings = { ...clone(activity.config), speak: settings.speak };
+  fillSettings();
+  start();
+};
+
+function results() {
+  show('results');
+
+  const questions = activity.questions;
+  const attempted = questions.filter(q => q.last !== null).length;
+
+  $('results-title').textContent =
+    activity.status === 'complete' ? 'Activity complete!' : 'Activity ended';
+
+  $('results-description').textContent =
+    attempted + ' of ' + questions.length + ' words attempted. ' +
+    'Each submitted wrong answer counts as an incorrect attempt.';
+
+  showStats([
+    ['Correct first try', questions.filter(q => q.correct && !q.wrong).length],
+    ['Corrected answers', questions.filter(q => q.correct && q.wrong).length],
+    ['Incorrect attempts', questions.reduce((sum, q) => sum + q.wrong, 0)]
+  ]);
+
+  showRows(questions.map(q => [
+    q.word,
+    q.pieces.join(' + '),
+    q.last === null ? '—' : q.last,
+    q.wrong,
+    q.last === null
+      ? 'Not attempted'
+      : q.correct
+        ? (q.wrong ? 'Corrected' : 'Correct first try')
+        : 'Incorrect'
+  ]));
+}
+
+// Word list files hold the list exactly as it is typed, one word per line.
+$('export').onclick = () => {
+  const lines = $('list').value
+    .split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+
+  try {
+    parseWords(lines.join('\n'));
+  } catch (error) {
+    setMessage(error.message);
+    return;
+  }
+
+  const blob = new Blob(
+    [JSON.stringify({
+      format: FILE_FORMAT,
+      version: FILE_VERSION,
+      lesson: { words: lines }
+    }, null, 2)],
+    { type: 'application/json;charset=utf-8' }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = 'word-list.word-building.json';
+  document.body.append(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  setMessage('Word list file download requested.', true);
+};
+
+function parseListFile(text) {
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error('This file is not valid JSON.');
+  }
+
+  if (!data || data.format !== FILE_FORMAT || data.version !== FILE_VERSION) {
+    throw new Error('Choose a Word Building file exported by this page.');
+  }
+
+  const words = data.lesson?.words;
+
+  if (
+    !Array.isArray(words) ||
+    !words.length ||
+    words.length > MAX_WORDS ||
+    words.some(line =>
+      typeof line !== 'string' ||
+      !line.trim() ||
+      line.length > MAX_WORD_LENGTH + MAX_CLUE_LENGTH + MAX_PIECES + 10 ||
+      /[\r\n]/.test(line)
+    )
+  ) {
+    throw new Error('The file contains missing, invalid, or oversized word data.');
+  }
+
+  const list = words.map(line => line.trim()).join('\n');
+
+  // The same checks as a typed list, so a bad file cannot start an activity.
+  parseWords(list);
+  return list;
+}
+
+$('import').onclick = () => {
+  if (importBusy) return;
+  $('import-file').value = '';
+  $('import-file').click();
+};
+
+$('import-file').onchange = async event => {
+  const file = event.target.files[0];
+
+  if (!file || importBusy) return;
+
+  if (file.size > MAX_FILE_BYTES) {
+    setMessage('The file is too large. Choose a word list file under 1 MB.');
+    return;
+  }
+
+  importBusy = true;
+
+  try {
+    $('list').value = parseListFile(await file.text());
+    settings = readSettings();
+    save();
+    setMessage('Word list imported. Press Start activity when you are ready.', true);
+  } catch (error) {
+    setMessage('Import failed. ' + error.message);
+  } finally {
+    importBusy = false;
+    $('import-file').value = '';
+  }
+};
+
+$('setup-form').onsubmit = event => {
+  event.preventDefault();
+  start();
+};
+
+['input', 'change'].forEach(name =>
+  $('setup-form').addEventListener(name, event => {
+    if (event.target.id === 'import-file') return;
+    if (event.target.id === 'speak') speakChosen = true;
+
+    sync();
+
+    const chosen = readSettings();
+
+    if (validSettings(chosen)) {
+      settings = chosen;
+      save();
+    }
+  })
+);
+
+$('voice-help').onclick = () => {
+  const open = $('voice-note').hidden;
+
+  $('voice-note').hidden = !open;
+  $('voice-help').setAttribute('aria-expanded', String(open));
+};
+
+// Browsers often report their voices a moment after the page loads.
+if (canSpeak) {
+  speechSynthesis.addEventListener?.('voiceschanged', () => {
+    if ($('setup-view').hidden) return;
+    syncVoice();
+  });
+}
+
+fillSettings();
+render();
+</script>
+</body>
+</html>
