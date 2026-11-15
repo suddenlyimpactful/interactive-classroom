@@ -361,7 +361,7 @@
     <small>A little movement. A lot of learning.</small>
   </div>
   <div class="actions">
-    <a class="home-link" href="/">Classroom home</a>
+    <a class="home-link" href="../">Classroom home</a>
     <button id="reset" type="button">↺ Reset words</button>
     <button id="fullscreen" type="button">⛶ Full screen</button>
     <button id="setup" class="primary" type="button"
@@ -490,6 +490,8 @@ const OLD_STORAGE_KEY = 'word-sort-v1';
 const DRAFT_KEY = 'word-sort-setup-draft';
 
 const FILE_FORMAT = 'interactive-word-sort';
+// Lesson files exported by the original FryCloud Classroom still import.
+const ACCEPTED_FORMATS = [FILE_FORMAT, 'frycloud-word-sort'];
 const FILE_VERSION = 1;
 const MAX_FILE_BYTES = 1024 * 1024;
 const MAX_WORDS = 1000;
@@ -786,7 +788,7 @@ function parseLessonFile(text) {
 
   if (
     !data ||
-    data.format !== FILE_FORMAT ||
+    !ACCEPTED_FORMATS.includes(data.format) ||
     data.version !== FILE_VERSION
   ) {
     throw new Error(
