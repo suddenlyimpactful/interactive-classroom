@@ -277,6 +277,31 @@
   .prompt.small { font-size: clamp(34px, 5vw, 60px); }
   .question .actions { margin-top: 14px; }
   .tools { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .help-toggle {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    min-height: 0;
+    padding: 0;
+    border-radius: 50%;
+    border-color: #c7942f;
+    background: #fff9e9;
+    color: #7d5d24;
+    font-size: 19px;
+  }
+
+  .help-toggle:hover, .help-toggle[aria-expanded=true] { background: #fff4d2; }
+
+  .help-note {
+    margin: 4px 0 12px;
+    padding: 12px 16px;
+    border: 1px solid #eadfbe;
+    border-radius: 11px;
+    background: #fff9e9;
+    color: #7d5d24;
+    line-height: 1.5;
+  }
 </style>
 </head>
 <body>
@@ -321,7 +346,16 @@
           <div class="check">
             <input id="speak" type="checkbox">
             <label for="speak">Offer a “Hear the word” button</label>
+            <button id="voice-help" class="help-toggle" type="button" hidden
+              aria-expanded="false" aria-controls="voice-note"
+              aria-label="About the voice this browser uses"
+              title="About the voice this browser uses">!</button>
           </div>
+          <p id="voice-note" class="help-note" hidden>
+            No built-in voice was found in this browser, so it may send
+            each word to an external server to be read aloud. “Hear the
+            word” is left off unless you turn it on.
+          </p>
 
           <div class="check">
             <input id="show-word" type="checkbox">
@@ -355,12 +389,10 @@
             <label for="force">Require a correct answer before continuing</label>
           </div>
 
-          <p style="margin-top:18px"><small id="speech-note">
-            “Hear the word” uses a voice built into this device when there
-            is one; otherwise the browser may use an online voice. A word
-            with nothing else to prompt it is always shown, so students are
-            never left guessing. Extra tiles come from the other words in
-            your list.
+          <p style="margin-top:18px"><small>
+            <span id="speech-note"></span> A word with nothing else to
+            prompt it is always shown, so students are never left guessing.
+            Extra tiles come from the other words in your list.
           </small></p>
 
           <h2 style="margin-top:26px">Share this list</h2>
@@ -692,14 +724,16 @@ const MAX_WORD_LENGTH = 40;
 const MAX_CLUE_LENGTH = 120;
 const MAX_PIECES = 20;
 
-const canSpeak = 'speechSynthesis' in window &&
-  'SpeechSynthesisUtterance' in window;
+const LANGUAGE = (document.documentElement.lang || 'en').toLowerCase();
+
+const canSpeak = Boolean(window.speechSynthesis) &&
+  typeof window.SpeechSynthesisUtterance === 'function';
 
 const defaults = {
   list: 'c-a-t\nsh-i-p\nun-happy = not happy\nre-play = play again\n' +
     'jump-ing\nrain-bow\nfriend',
   showClue: true,
-  speak: true,
+  speak: null,   // null: on only when a built-in voice is found
   showWord: false,
   extra: '2',
   shuffle: true,
@@ -710,13 +744,15 @@ const defaults = {
 let settings = { ...defaults };
 let activity = null;
 let importBusy = false;
+let speakChosen = false;   // true once a teacher sets “Hear the word”
 
 function validSettings(s) {
   return s &&
     typeof s.list === 'string' && s.list.length <= 20000 &&
     ['0', '1', '2', '3', '4', '6'].includes(s.extra) &&
-    ['showClue', 'speak', 'showWord', 'shuffle', 'allow', 'force']
+    ['showClue', 'showWord', 'shuffle', 'allow', 'force']
       .every(key => typeof s[key] === 'boolean') &&
+    (s.speak === null || typeof s.speak === 'boolean') &&
     (!s.force || s.allow);
 }
 
@@ -848,7 +884,7 @@ function readSettings() {
   return {
     list: $('list').value,
     showClue: $('show-clue').checked,
-    speak: $('speak').checked,
+    speak: speakChosen ? $('speak').checked : null,
     showWord: $('show-word').checked,
     extra: $('extra').value,
     shuffle: $('shuffle').checked,
@@ -865,7 +901,8 @@ function sync() {
 function fillSettings() {
   $('list').value = settings.list;
   $('show-clue').checked = settings.showClue;
-  $('speak').checked = settings.speak;
+  speakChosen = settings.speak !== null;
+  syncVoice();
   $('show-word').checked = settings.showWord;
   $('extra').value = settings.extra;
   $('shuffle').checked = settings.shuffle;
@@ -893,12 +930,14 @@ function start() {
 
   settings = chosen;
 
+  // The activity keeps a plain yes or no for the hear-the-word button.
+  const config = { ...clone(chosen), speak: $('speak').checked };
   const order = words.map((word, index) => index);
 
   activity = {
     status: 'active',
     index: 0,
-    config: clone(chosen),
+    config,
     questions: (chosen.shuffle ? shuffled(order) : order).map(index => ({
       word: words[index].word,
       pieces: words[index].pieces,
@@ -932,25 +971,53 @@ const signature = q => q.tray.join('|');
 function prompts(q) {
   const c = activity.config;
   const clue = c.showClue && q.clue ? q.clue : '';
-  const hear = c.speak && canSpeak;
+  const hear = c.speak === true && canSpeak;
 
   return { clue, hear, word: c.showWord || !clue && !hear };
+}
+
+// A voice built into this device speaks without sending the word to an
+// online speech service. Returns null when the browser reports none.
+function localVoice() {
+  if (!canSpeak) return null;
+
+  return speechSynthesis.getVoices().find(voice =>
+    voice.localService && voice.lang.toLowerCase().startsWith(LANGUAGE)
+  ) || null;
+}
+
+// Set the “Hear the word” option to suit the voices this browser has.
+// Until a teacher ticks or clears the box, it follows what was found.
+function syncVoice() {
+  const local = localVoice();
+
+  $('speak').disabled = !canSpeak;
+
+  $('speak').checked = canSpeak &&
+    (speakChosen ? settings.speak === true : Boolean(local));
+
+  $('voice-help').hidden = !canSpeak || Boolean(local);
+
+  if ($('voice-help').hidden) {
+    $('voice-note').hidden = true;
+    $('voice-help').setAttribute('aria-expanded', 'false');
+  }
+
+  $('speech-note').textContent = !canSpeak
+    ? 'This browser cannot read words aloud, so “Hear the word” is unavailable.'
+    : local
+      ? '“Hear the word” uses a voice built into this device.'
+      : 'No built-in voice was found, so “Hear the word” starts switched off.';
 }
 
 function hearWord() {
   if (!canSpeak || !activity || activity.status !== 'active') return;
 
   const speech = new SpeechSynthesisUtterance(current().word);
-  const language = document.documentElement.lang || 'en';
-
-  // Prefer a voice built into this device, so the word is spoken without
-  // being sent to an online speech service.
-  const local = speechSynthesis.getVoices().find(voice =>
-    voice.localService && voice.lang.toLowerCase().startsWith(language)
-  );
+  const local = localVoice();
 
   if (local) speech.voice = local;
-  speech.lang = local ? local.lang : language;
+  speech.lang = local ? local.lang : LANGUAGE;
   speech.rate = .8;
   speechSynthesis.cancel();
   speechSynthesis.speak(speech);
@@ -1188,7 +1255,8 @@ $('back').onclick = () => {
 };
 
 $('again').onclick = () => {
-  settings = clone(activity.config);
+  // Replay with the same choices, without fixing an automatic voice setting.
+  settings = { ...clone(activity.config), speak: settings.speak };
   fillSettings();
   start();
 };
@@ -1334,6 +1402,7 @@ $('setup-form').onsubmit = event => {
 ['input', 'change'].forEach(name =>
   $('setup-form').addEventListener(name, event => {
     if (event.target.id === 'import-file') return;
+    if (event.target.id === 'speak') speakChosen = true;
 
     sync();
 
@@ -1346,11 +1415,19 @@ $('setup-form').onsubmit = event => {
   })
 );
 
-if (!canSpeak) {
-  $('speech-note').textContent =
-    'This browser has no built-in voice, so “Hear the word” is unavailable ' +
-    'here and words without a clue are shown instead. Extra tiles come ' +
-    'from the other words in your list.';
+$('voice-help').onclick = () => {
+  const open = $('voice-note').hidden;
+
+  $('voice-note').hidden = !open;
+  $('voice-help').setAttribute('aria-expanded', String(open));
+};
+
+// Browsers often report their voices a moment after the page loads.
+if (canSpeak) {
+  speechSynthesis.addEventListener?.('voiceschanged', () => {
+    if ($('setup-view').hidden) return;
+    syncVoice();
+  });
 }
 
 fillSettings();
