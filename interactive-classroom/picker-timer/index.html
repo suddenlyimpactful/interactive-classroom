@@ -269,6 +269,7 @@
   .picked.landed { background: #fff4d2; }
 
   #names { min-height: 180px; }
+  .tools { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 
   .history { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0 0; padding: 0; list-style: none; }
   .history li { padding: 6px 12px; background: #e6eddf; border-radius: 20px; font-size: 14px; }
@@ -347,6 +348,13 @@
         <textarea id="names" spellcheck="false" placeholder="Ava&#10;Ben&#10;Carlos"></textarea>
         <small>Up to 200 names. They are kept in this browser only.</small>
       </div>
+
+      <div class="tools">
+        <button id="export" type="button">↓ Export class list</button>
+        <button id="import" type="button">↑ Import class list</button>
+      </div>
+      <p><small>Save the names as a file on this computer, so the list can be loaded again if the browser forgets it.</small></p>
+      <input id="import-file" type="file" accept=".json,application/json" hidden>
 
       <div class="check">
         <input id="no-repeat" type="checkbox">
@@ -496,6 +504,9 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 const KEY = 'interactive-picker-timer-v1';
+const FILE_FORMAT = 'interactive-class-list';
+const FILE_VERSION = 1;
+const MAX_FILE_BYTES = 1024 * 1024;
 const MAX_NAMES = 200;
 const MAX_NAME_LENGTH = 60;
 const MAX_SECONDS = 3 * 60 * 60;
@@ -512,6 +523,7 @@ const defaults = {
 
 let settings = { ...defaults, picked: [] };
 let rolling = null;
+let importBusy = false;
 
 // The timer counts down to a moment in time, so it stays accurate even
 // when the browser is busy.
@@ -665,14 +677,118 @@ $('start-over').onclick = () => {
 $('names').addEventListener('input', () => {
   const lines = $('names').value.split(/\r?\n/).filter(line => line.trim());
 
-  $('picker-message').textContent = lines.length > MAX_NAMES
+  setPickerMessage(lines.length > MAX_NAMES
     ? 'Only the first ' + MAX_NAMES + ' names are used.'
-    : '';
+    : '');
 
   settings.names = $('names').value.slice(0, 20000);
   save();
   renderPicker();
 });
+
+function setPickerMessage(text, ok = false) {
+  $('picker-message').textContent = text;
+  $('picker-message').classList.toggle('ok', ok);
+}
+
+// Class list files hold only the names, one entry each.
+$('export').onclick = () => {
+  const names = nameList();
+
+  if (!names.length) {
+    setPickerMessage('Add some names before exporting.');
+    return;
+  }
+
+  const blob = new Blob(
+    [JSON.stringify({
+      format: FILE_FORMAT,
+      version: FILE_VERSION,
+      names
+    }, null, 2)],
+    { type: 'application/json;charset=utf-8' }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = 'class-list.json';
+  document.body.append(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  setPickerMessage('Class list file download requested.', true);
+};
+
+function parseListFile(text) {
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error('This file is not valid JSON.');
+  }
+
+  if (!data || data.format !== FILE_FORMAT || data.version !== FILE_VERSION) {
+    throw new Error('Choose a class list file exported by this page.');
+  }
+
+  if (
+    !Array.isArray(data.names) ||
+    !data.names.length ||
+    data.names.length > MAX_NAMES ||
+    data.names.some(name =>
+      typeof name !== 'string' ||
+      !name.trim() ||
+      name.length > MAX_NAME_LENGTH ||
+      /[\r\n]/.test(name)
+    )
+  ) {
+    throw new Error('The file contains missing, invalid, or oversized names.');
+  }
+
+  return data.names.map(name => name.trim()).join('\n');
+}
+
+$('import').onclick = () => {
+  if (importBusy || rolling !== null) return;
+  $('import-file').value = '';
+  $('import-file').click();
+};
+
+$('import-file').onchange = async event => {
+  const file = event.target.files[0];
+
+  if (!file || importBusy || rolling !== null) return;
+
+  if (file.size > MAX_FILE_BYTES) {
+    setPickerMessage('The file is too large. Choose a class list under 1 MB.');
+    return;
+  }
+
+  importBusy = true;
+
+  try {
+    const names = parseListFile(await file.text());
+
+    // A new class starts with everyone waiting for a turn.
+    $('names').value = names;
+    settings.names = names;
+    settings.picked = [];
+    $('groups').replaceChildren();
+    showPicked('Press “Pick a name”.', 'idle');
+    save();
+    renderPicker();
+    setPickerMessage('Class list imported.', true);
+  } catch (error) {
+    setPickerMessage('Import failed. ' + error.message);
+  } finally {
+    importBusy = false;
+    $('import-file').value = '';
+  }
+};
 
 $('no-repeat').addEventListener('change', () => {
   settings.noRepeat = $('no-repeat').checked;
