@@ -28,6 +28,73 @@
       border-bottom: 1px solid #dce2d8;
       font-size: 22px;
       font-weight: 750;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .help-button, dialog button {
+      min-height: 48px;
+      padding: 12px 18px;
+      border: 1px solid #ced8d0;
+      border-radius: 10px;
+      background: white;
+      color: #29483e;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .help-button:hover, dialog button:hover {
+      background: #edf3ed;
+    }
+
+    .help-button:focus-visible, dialog button:focus-visible {
+      outline: 3px solid #b98b24;
+      outline-offset: 4px;
+    }
+
+    dialog {
+      width: min(600px, calc(100% - 32px));
+      max-height: calc(100dvh - 32px);
+      overflow: auto;
+      padding: clamp(22px, 4vw, 34px);
+      border: 1px solid #d8dfd1;
+      border-radius: 18px;
+      background: #fffefa;
+      color: #223e38;
+      box-shadow: 0 20px 80px #223e3840;
+    }
+
+    dialog::backdrop {
+      background: #14281e88;
+    }
+
+    dialog h2 {
+      margin-bottom: 14px;
+    }
+
+    dialog p, dialog li {
+      color: #57695f;
+      line-height: 1.65;
+    }
+
+    dialog ul {
+      margin: 0 0 16px;
+      padding-left: 22px;
+    }
+
+    dialog li {
+      margin-bottom: 8px;
+    }
+
+    dialog .close-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 22px;
     }
 
     header span {
@@ -151,7 +218,11 @@
 </head>
 
 <body>
-  <header>Interactive <span>Classroom</span></header>
+  <header>
+    <div>Interactive <span>Classroom</span></div>
+    <button id="help" class="help-button" type="button"
+            aria-haspopup="dialog">Help &amp; privacy</button>
+  </header>
 
   <main>
     <div class="eyebrow">Interactive classroom activities</div>
@@ -521,5 +592,66 @@
   </main>
 
   <footer>Interactive Classroom · Made for learning together. <a href="https://github.com/suddenlyimpactful/interactive-classroom" target="_blank" rel="noopener">Source</a></footer>
+
+  <dialog id="help-dialog" aria-labelledby="help-title">
+    <form method="dialog">
+      <h2 id="help-title">Your work stays with you</h2>
+
+      <p>
+        Nothing you type into these activities is sent to a server. There
+        are no accounts, and the pages do not collect or upload what you
+        enter.
+      </p>
+
+      <ul>
+        <li>
+          <strong>Saved in this browser.</strong> Word lists, class
+          names, pictures, settings, and progress are kept in this
+          browser’s storage on this device only. They do not follow you
+          to another computer or another browser.
+        </li>
+        <li>
+          <strong>Clearing browser data removes them.</strong> If the
+          browser’s site data or cache is cleared, anything saved here
+          is erased.
+        </li>
+        <li>
+          <strong>Exported files are yours.</strong> Activities with an
+          Export button save a file to this computer. Keep it as a
+          backup, or share it with another teacher, who can load it
+          with Import.
+        </li>
+        <li>
+          <strong>Class lists contain student names.</strong> Store an
+          exported class list where you keep other rosters.
+        </li>
+        <li>
+          <strong>One exception to know about.</strong> “Hear the word”
+          in Word Building uses a voice built into the device when there
+          is one. Without one, some browsers speak through an online
+          service, which receives the word being read aloud.
+        </li>
+      </ul>
+
+      <p>
+        Choose an activity, set it up on its first screen, and press
+        Start. Each one works with touch, a mouse, or a keyboard, and
+        has a Full screen button for classroom displays.
+      </p>
+
+      <div class="close-row">
+        <button value="close" autofocus>Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    'use strict';
+
+    document.getElementById('help').onclick = () => {
+      const dialog = document.getElementById('help-dialog');
+      if (!dialog.open) dialog.showModal();
+    };
+  </script>
 </body>
 </html>

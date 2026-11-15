@@ -356,7 +356,8 @@
           </div>
 
           <p style="margin-top:18px"><small id="speech-note">
-            “Hear the word” uses the voice built into this browser. A word
+            “Hear the word” uses a voice built into this device when there
+            is one; otherwise the browser may use an online voice. A word
             with nothing else to prompt it is always shown, so students are
             never left guessing. Extra tiles come from the other words in
             your list.
@@ -940,8 +941,16 @@ function hearWord() {
   if (!canSpeak || !activity || activity.status !== 'active') return;
 
   const speech = new SpeechSynthesisUtterance(current().word);
+  const language = document.documentElement.lang || 'en';
 
-  speech.lang = document.documentElement.lang || 'en';
+  // Prefer a voice built into this device, so the word is spoken without
+  // being sent to an online speech service.
+  const local = speechSynthesis.getVoices().find(voice =>
+    voice.localService && voice.lang.toLowerCase().startsWith(language)
+  );
+
+  if (local) speech.voice = local;
+  speech.lang = local ? local.lang : language;
   speech.rate = .8;
   speechSynthesis.cancel();
   speechSynthesis.speak(speech);
