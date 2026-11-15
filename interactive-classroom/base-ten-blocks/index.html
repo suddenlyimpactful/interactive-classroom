@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build numbers with touch-friendly thousands, hundreds, tens, and ones blocks, or read the number the blocks show. An Interactive Classroom activity.">
+<title>Base-Ten Blocks · Interactive Classroom</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: #223e38;
+    background: #f6f7f2;
+  }
+
+  body { margin: 0; }
+  button, input, select, textarea { font: inherit; }
+  [hidden] { display: none !important; }
+
+  button, a.home {
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 1px solid #ced8d0;
+    border-radius: 10px;
+    background: white;
+    color: #29483e;
+    font-weight: 650;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  button:hover, a.home:hover { background: #edf3ed; }
+  button:disabled { opacity: .48; cursor: default; }
+
+  button:focus-visible, a:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 3px solid #b98b24;
+    outline-offset: 4px;
+  }
+
+  .primary { background: #285f4c; border-color: #285f4c; color: white; }
+  .primary:hover { background: #174d3a; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 22px 4vw;
+    background: #fffef9;
+    border-bottom: 1px solid #dce2d8;
+  }
+
+  header strong { display: block; font-size: 25px; }
+  small, .muted { color: #687b70; line-height: 1.6; }
+  .home { display: inline-flex; align-items: center; text-decoration: none; }
+  .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .center { justify-content: center; }
+
+  main { max-width: 1400px; margin: auto; padding: 28px 3vw; }
+  h1 { font-size: clamp(28px, 4vw, 42px); letter-spacing: -1px; margin: 0 0 10px; }
+  h2 { font-size: 21px; margin: 0 0 12px; }
+  h3 { font-size: 17px; margin: 0 0 10px; }
+  p { line-height: 1.6; color: #687b70; margin: 0 0 14px; }
+
+  .panel {
+    margin-top: 22px;
+    padding: clamp(20px, 3vw, 32px);
+    background: #fffefa;
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+  }
+
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .row { display: flex; gap: 15px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 120px; }
+  .field { margin-bottom: 20px; }
+
+  label { display: block; font-weight: 650; font-size: 14px; margin-bottom: 8px; }
+
+  input:not([type=checkbox]):not([type=file]), select, textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px;
+    border: 1px solid #cbd6c7;
+    border-radius: 8px;
+    color: #223e38;
+    background: white;
+  }
+
+  textarea { min-height: 220px; line-height: 1.5; resize: vertical; }
+
+  .check { display: flex; align-items: center; gap: 12px; min-height: 46px; }
+  .check input { width: 22px; height: 22px; accent-color: #285f4c; flex-shrink: 0; }
+  .check label { margin: 0; cursor: pointer; }
+  .nested { padding-left: 34px; }
+
+  .notice { min-height: 26px; color: #a34539; margin-top: 14px; }
+  .notice.ok { color: #28633e; }
+
+  .topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .badge { background: #e6eddf; border-radius: 25px; padding: 10px 17px; font-size: 14px; }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #687b70;
+  }
+
+  .question { text-align: center; padding: 20px 0 8px; }
+
+  .prompt {
+    font-size: clamp(46px, 7vw, 84px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.2;
+    margin: 6px 0 12px;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  /* Draggable tiles and the places they can be dropped. */
+  .tile {
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 2px solid #adc3ad;
+    border-radius: 9px;
+    background: #fffefa;
+    box-shadow: 0 3px 0 #dce1d4;
+    font-size: 22px;
+    line-height: 1.3;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .tile[aria-pressed=true] { outline: 3px solid #c7942f; outline-offset: 3px; }
+  .tile.good { background: #e5f3e4; border-color: #418251; }
+  .tile.bad { background: #fff0eb; border-color: #bb6658; }
+
+  .bank {
+    margin-top: 18px;
+    padding: 22px;
+    border: 2px dashed #c6d2bd;
+    border-radius: 16px;
+    background: #eef1e8;
+    min-width: 0;
+  }
+
+  .bank-list {
+    display: flex;
+    gap: 13px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    min-height: 60px;
+  }
+
+  .over { background: #fff4d2; box-shadow: 0 0 0 4px #e0be62; }
+  .source-drag { opacity: .3; }
+
+  .ghost {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: .96;
+    transform: rotate(-4deg);
+    margin: 0;
+    max-width: 320px;
+    box-shadow: 0 12px 30px #223e3833;
+  }
+
+  .empty { color: #7c8c7f; font-size: 14px; line-height: 1.6; padding: 14px 0; pointer-events: none; }
+
+  .selection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+    padding: 12px 16px;
+    border: 1px solid #eadfbe;
+    border-radius: 11px;
+    background: #fff9e9;
+    color: #7d5d24;
+    line-height: 1.5;
+  }
+
+  .feedback {
+    min-height: 68px;
+    padding: 19px 5px;
+    text-align: center;
+    font-size: 21px;
+    font-weight: 650;
+  }
+
+  .feedback.good { color: #28633e; }
+  .feedback.bad { color: #a34539; }
+
+  .stats { display: flex; gap: 15px; flex-wrap: wrap; margin: 24px 0; }
+  .stat { flex: 1; min-width: 150px; padding: 20px; background: #eef1e8; border-radius: 12px; }
+  .stat strong { display: block; font-size: 34px; }
+
+  .table-wrap { overflow: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #dce2d8; }
+
+  dialog {
+    width: min(460px, calc(100% - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    padding: 28px;
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+    background: #fffefa;
+    color: #223e38;
+    box-shadow: 0 20px 80px #223e3840;
+  }
+
+  dialog::backdrop { background: #14281e88; }
+
+  footer { text-align: center; color: #708076; font-size: 13px; line-height: 1.6; padding: 25px 0; }
+  footer a { color: inherit; }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  @media (max-width: 850px) {
+    .setup-grid { grid-template-columns: 1fr; }
+    .tile { font-size: 19px; }
+    main { padding: 24px 14px; }
+  }
+
+  :root { --u: clamp(8px, .95vw, 15px); }
+
+  .work { display: grid; gap: 22px; margin-top: 14px; align-items: start; }
+  .work.building { grid-template-columns: minmax(210px, 280px) minmax(0, 1fr); }
+  .work.reading { grid-template-columns: minmax(0, 1fr) minmax(250px, 320px); }
+  .work .bank { margin-top: 0; }
+
+  .mat {
+    min-width: 0;
+    padding: 18px;
+    background: #fffdfa;
+    border: 3px dashed #b69b72;
+    border-radius: 18px;
+    transition: background .15s, box-shadow .15s;
+  }
+
+  .columns { display: flex; flex-wrap: wrap; gap: 14px; }
+
+  .column {
+    flex: 1 1 calc(var(--u) * 12);
+    min-width: 0;
+    min-height: calc(var(--u) * 14);
+    padding: 12px;
+    background: #f7f8f2;
+    border: 1px solid #dfe5d8;
+    border-radius: 12px;
+  }
+
+  .column.wide { flex: 2 1 calc(var(--u) * 23); }
+
+  .column h3 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid #dfe5d8;
+  }
+
+  .column .count {
+    min-width: 34px;
+    padding: 3px 10px;
+    text-align: center;
+    background: #e6eddf;
+    border-radius: 20px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .blocks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    align-content: flex-start;
+    gap: calc(var(--u) * .7);
+  }
+
+  .blocks.thousands { gap: calc(var(--u) * 1.2); padding-top: calc(var(--u) * 3); }
+  .blocks.ones { max-width: calc(var(--u) * 9.2); }
+
+  /* Each block is drawn to scale: ten ones are as long as one ten rod. */
+  .block {
+    display: block;
+    flex: none;
+    min-height: 0;
+    padding: 0;
+    border: 1.5px solid var(--edge);
+    border-radius: 2px;
+    box-shadow: none;
+    background:
+      linear-gradient(var(--edge) 1.5px, transparent 1.5px) 0 -1px / var(--u) var(--u),
+      linear-gradient(90deg, var(--edge) 1.5px, transparent 1.5px) -1px 0 / var(--u) var(--u),
+      var(--face);
+  }
+
+  button.block:hover {
+    background:
+      linear-gradient(var(--edge) 1.5px, transparent 1.5px) 0 -1px / var(--u) var(--u),
+      linear-gradient(90deg, var(--edge) 1.5px, transparent 1.5px) -1px 0 / var(--u) var(--u),
+      var(--face);
+    filter: brightness(.93);
+  }
+
+  .block.one { --face: #e9b592; --edge: #a8643d; width: var(--u); height: var(--u); }
+  .block.ten { --face: #ecd386; --edge: #a5822a; width: var(--u); height: calc(var(--u) * 10); }
+
+  .block.hundred, .block.thousand {
+    --face: #b4d0a6;
+    --edge: #5b8560;
+    width: calc(var(--u) * 10);
+    height: calc(var(--u) * 10);
+  }
+
+  /* A thousand is ten hundreds stacked, shown as a face with depth. */
+  .block.thousand {
+    --face: #a9c6da;
+    --edge: #4f7d9b;
+    margin-right: calc(var(--u) * 3);
+    box-shadow:
+      calc(var(--u) * .5) calc(var(--u) * -.5) 0 #8fb2c9,
+      calc(var(--u) * 1) calc(var(--u) * -1) 0 #86aac2,
+      calc(var(--u) * 1.5) calc(var(--u) * -1.5) 0 #7da2bb,
+      calc(var(--u) * 2) calc(var(--u) * -2) 0 #749ab4,
+      calc(var(--u) * 2.5) calc(var(--u) * -2.5) 0 #6b92ad,
+      calc(var(--u) * 3) calc(var(--u) * -3) 0 #5f88a4;
+  }
+
+  .mat-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .total { font-size: 24px; font-weight: 750; font-variant-numeric: tabular-nums; }
+
+  .bank-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    width: 100%;
+    padding: 14px 10px 10px;
+    border: 2px solid #c9d5c1;
+    background: #fffefa;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Bank pictures are smaller, but still to scale with each other. */
+  .bank-block .block { --u: 8px; pointer-events: none; }
+  .bank-block.has-thousand { padding-top: 40px; }
+  .bank-block .caption { font-size: 14px; line-height: 1.3; }
+  .bank-list.stack { flex-direction: column; flex-wrap: nowrap; }
+
+  .keypad-panel {
+    padding: 18px;
+    background: #eef1e8;
+    border: 2px solid #d3dfcb;
+    border-radius: 18px;
+  }
+
+  .entry {
+    min-height: 74px;
+    margin-bottom: 14px;
+    padding: 8px 16px;
+    background: white;
+    border: 2px solid #cbd6c7;
+    border-radius: 12px;
+    font-size: 44px;
+    font-weight: 800;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .entry.blank { color: #a9b5a8; font-weight: 500; font-size: 20px; line-height: 54px; }
+
+  .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .keypad button { min-height: 60px; font-size: 24px; }
+  .keypad .wide { font-size: 16px; }
+
+  @media (max-width: 850px) {
+    .work.building, .work.reading { grid-template-columns: 1fr; }
+    .bank-list.stack { flex-direction: row; flex-wrap: wrap; }
+    .bank-block { width: auto; flex: 1 1 130px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <strong>Base-Ten Blocks</strong>
+    <small>Interactive Classroom · Build it. See it. Say it.</small>
+  </div>
+  <div class="actions">
+    <a class="home" href="../">Classroom home</a>
+    <button id="fullscreen" type="button">Full screen</button>
+  </div>
+</header>
+
+<main>
+  <section id="setup-view">
+    <h1>How is the number built?</h1>
+    <p>Build numbers from thousands, hundreds, tens, and ones, or read the number the blocks show.</p>
+
+    <form id="setup-form" class="panel">
+      <div class="setup-grid">
+        <div>
+          <div class="field">
+            <label for="mode">Activity</label>
+            <select id="mode">
+              <option value="build">Build the number with blocks</option>
+              <option value="read">Read the number the blocks show</option>
+              <option value="mixed">A mix of both</option>
+            </select>
+          </div>
+
+          <div class="row field">
+            <div>
+              <label for="minimum">Smallest number</label>
+              <input id="minimum" type="number" min="1" max="9999" step="1" required>
+            </div>
+            <div>
+              <label for="maximum">Largest number</label>
+              <input id="maximum" type="number" min="1" max="9999" step="1" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="count">Questions</label>
+            <input id="count" type="number" min="1" max="50" step="1" required>
+          </div>
+
+          <p><small>
+            Numbers may range from 1 to 9,999. Only the block sizes needed
+            for the largest number appear: up to 99 uses tens and ones, up
+            to 999 adds hundreds, and larger numbers add thousands.
+            Questions may repeat.
+          </small></p>
+        </div>
+
+        <div>
+          <div class="check">
+            <input id="show-counts" type="checkbox">
+            <label for="show-counts">Show block counts and the running total while building</label>
+          </div>
+
+          <div class="check">
+            <input id="standard" type="checkbox">
+            <label for="standard">Require the fewest blocks (no more than 9 of any size)</label>
+          </div>
+
+          <div class="check">
+            <input id="hints" type="checkbox">
+            <label for="hints">Say whether an incorrect answer is too high or too low</label>
+          </div>
+
+          <div class="check">
+            <input id="allow" type="checkbox">
+            <label for="allow">Allow corrections</label>
+          </div>
+
+          <div class="check nested">
+            <input id="force" type="checkbox">
+            <label for="force">Require a correct answer before continuing</label>
+          </div>
+
+          <p style="margin-top:18px"><small>
+            Unless the fewest blocks are required, any blocks that add up
+            to the number count as correct, so 12 ones is a fine way to
+            build 12. Up to 20 of each block fit on the mat. Each submitted
+            wrong answer counts as an incorrect attempt.
+          </small></p>
+        </div>
+      </div>
+
+      <button class="primary" type="submit" style="margin-top:20px">Start activity</button>
+      <div id="setup-message" class="notice" role="status"></div>
+    </form>
+  </section>
+
+  <section id="play-view" hidden>
+    <div class="topline">
+      <span class="badge" id="progress"></span>
+      <button id="end" type="button">End activity</button>
+    </div>
+
+    <div class="question">
+      <div class="eyebrow" id="prompt-label"></div>
+      <div class="prompt" id="prompt"></div>
+      <p id="instruction"></p>
+    </div>
+
+    <div class="work" id="work">
+      <section class="bank" id="block-bank">
+        <h2>Blocks</h2>
+        <p><small>Tap a block to add it, or drag it onto the mat.</small></p>
+        <div class="bank-list stack" id="bank-list"></div>
+      </section>
+
+      <section class="mat" id="mat" data-drop="mat" aria-label="Place value mat">
+        <div class="columns" id="columns"></div>
+        <div class="mat-foot" id="mat-foot">
+          <span class="total" id="total"></span>
+          <button id="clear" type="button">Clear the mat</button>
+        </div>
+      </section>
+
+      <section class="keypad-panel" id="keypad-panel" aria-label="Number pad">
+        <div class="entry" id="entry" role="status"></div>
+        <div class="keypad" id="keypad"></div>
+      </section>
+    </div>
+
+    <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+
+    <div class="actions center">
+      <button id="check" class="primary" type="button">Check answer</button>
+      <button id="next" type="button" hidden>Next number</button>
+    </div>
+  </section>
+
+  <section id="results-view" class="panel" hidden>
+    <h1 id="results-title"></h1>
+    <p id="results-description"></p>
+    <div class="stats" id="stats"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Question</th>
+            <th>Task</th>
+            <th>Number</th>
+            <th>Last checked answer</th>
+            <th>Incorrect attempts</th>
+            <th>Outcome</th>
+          </tr>
+        </thead>
+        <tbody id="result-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="actions" style="margin-top:24px">
+      <button id="again" class="primary" type="button">Play again</button>
+      <button id="back" type="button">Back to setup</button>
+    </div>
+  </section>
+
+  <footer><span id="save-status">Settings and progress save in this browser on this device.</span></footer>
+  <div id="announce" class="sr" aria-live="polite"></div>
+</main>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-message"></p>
+    <div class="actions" style="justify-content:flex-end;margin-top:24px">
+      <button value="cancel" autofocus>Cancel</button>
+      <button value="yes" class="primary">Continue</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+
+const SAVED_TEXT = 'Settings and progress save in this browser on this device.';
+
+function shuffled(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function announce(text) {
+  $('announce').textContent = text;
+}
+
+// Everything is kept in this browser; nothing is sent to a server.
+function readStored(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeStored(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    $('save-status').textContent = SAVED_TEXT;
+    return true;
+  } catch (error) {
+    $('save-status').textContent =
+      'Browser storage is unavailable or full. This session cannot be saved.';
+    return false;
+  }
+}
+
+// An on-page confirmation that also works in full screen.
+let pendingAction = null;
+
+function ask(title, message, action) {
+  $('confirm-title').textContent = title;
+  $('confirm-message').textContent = message;
+  pendingAction = action;
+
+  const dialog = $('confirm-dialog');
+  dialog.returnValue = 'cancel';
+  if (!dialog.open) dialog.showModal();
+}
+
+$('confirm-dialog').addEventListener('close', () => {
+  const action = pendingAction;
+  pendingAction = null;
+  if ($('confirm-dialog').returnValue === 'yes') action?.();
+});
+
+$('fullscreen').onclick = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (error) {
+    $('save-status').textContent =
+      'Full screen is unavailable. Use your browser’s full-screen command.';
+  }
+};
+
+document.addEventListener('fullscreenchange', () => {
+  $('fullscreen').textContent =
+    document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+});
+
+function show(view) {
+  ['setup', 'play', 'results'].forEach(name => {
+    $(name + '-view').hidden = name !== view;
+  });
+}
+
+function setFeedback(text, kind = '') {
+  $('feedback').textContent = text;
+  $('feedback').className = 'feedback' + (kind ? ' ' + kind : '');
+}
+
+function showStats(stats) {
+  $('stats').replaceChildren(...stats.map(([label, value]) => {
+    const box = document.createElement('div');
+    const strong = document.createElement('strong');
+    box.className = 'stat';
+    strong.textContent = value;
+    box.append(strong, document.createTextNode(label));
+    return box;
+  }));
+}
+
+// Cells may be plain text or ready-made elements.
+function showRows(rows) {
+  $('result-rows').replaceChildren(...rows.map(cells => {
+    const row = document.createElement('tr');
+    cells.forEach(value => {
+      const cell = document.createElement('td');
+      cell.append(value instanceof Node ? value : String(value));
+      row.append(cell);
+    });
+    return row;
+  }));
+}
+
+// Pointer Events cover finger, pen, and mouse dragging. Each page supplies
+// handleDrop(source, zone, event), where zone is the [data-drop] element
+// under the pointer, or null.
+let drag = null;
+let suppressClick = false;
+
+function dropZoneAt(x, y) {
+  return document.elementFromPoint(x, y)?.closest('[data-drop]') || null;
+}
+
+function clearHover() {
+  document.querySelectorAll('.over').forEach(element =>
+    element.classList.remove('over')
+  );
+}
+
+function startDrag(event) {
+  if (event.button !== 0 || drag) return;
+
+  const source = event.currentTarget;
+
+  drag = {
+    source,
+    pointer: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+    ghost: null
+  };
+
+  source.setPointerCapture(event.pointerId);
+  source.addEventListener('pointermove', moveDrag);
+  source.addEventListener('pointerup', endDrag);
+  source.addEventListener('pointercancel', cancelDrag);
+  source.addEventListener('lostpointercapture', cancelDrag);
+}
+
+function moveDrag(event) {
+  if (!drag || event.pointerId !== drag.pointer) return;
+
+  if (
+    !drag.ghost &&
+    Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 8
+  ) {
+    const rect = drag.source.getBoundingClientRect();
+
+    drag.ghost = drag.source.cloneNode(true);
+    drag.ghost.removeAttribute('id');
+    drag.ghost.classList.add('ghost');
+    drag.ghost.style.width = rect.width + 'px';
+    drag.ghost.setAttribute('aria-hidden', 'true');
+
+    document.body.append(drag.ghost);
+    drag.source.classList.add('source-drag');
+  }
+
+  if (!drag.ghost) return;
+
+  event.preventDefault();
+
+  drag.ghost.style.left =
+    (event.clientX - drag.ghost.offsetWidth / 2) + 'px';
+  drag.ghost.style.top =
+    (event.clientY - drag.ghost.offsetHeight / 2) + 'px';
+
+  clearHover();
+
+  const zone = dropZoneAt(event.clientX, event.clientY);
+  if (zone && !zone.contains(drag.source)) zone.classList.add('over');
+
+  if (event.clientY > innerHeight - 70) window.scrollBy(0, 18);
+  if (event.clientY < 70) window.scrollBy(0, -18);
+}
+
+function cancelDrag() {
+  if (!drag) return;
+
+  const current = drag;
+  drag = null;
+
+  current.ghost?.remove();
+  current.source.classList.remove('source-drag');
+  current.source.removeEventListener('pointermove', moveDrag);
+  current.source.removeEventListener('pointerup', endDrag);
+  current.source.removeEventListener('pointercancel', cancelDrag);
+  current.source.removeEventListener('lostpointercapture', cancelDrag);
+
+  if (current.source.hasPointerCapture(current.pointer)) {
+    current.source.releasePointerCapture(current.pointer);
+  }
+
+  clearHover();
+}
+
+function endDrag(event) {
+  if (!drag || event.pointerId !== drag.pointer) return;
+
+  const current = drag;
+  const moved = Boolean(current.ghost);
+  const zone = dropZoneAt(event.clientX, event.clientY);
+
+  cancelDrag();
+
+  if (moved) {
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 200);
+    handleDrop(current.source, zone, event);
+  }
+}
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && drag) {
+    cancelDrag();
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 200);
+  }
+});
+
+const KEY = 'interactive-base-ten-blocks-v1';
+const MAX_EACH = 20;
+
+const BLOCKS = [
+  { id: 'thousand', value: 1000, name: 'Thousand cube', column: 'Thousands', word: 'thousand' },
+  { id: 'hundred', value: 100, name: 'Hundred flat', column: 'Hundreds', word: 'hundred' },
+  { id: 'ten', value: 10, name: 'Ten rod', column: 'Tens', word: 'ten' },
+  { id: 'one', value: 1, name: 'One cube', column: 'Ones', word: 'one' }
+];
+
+const defaults = {
+  mode: 'build',
+  min: '10',
+  max: '999',
+  count: '10',
+  showCounts: true,
+  standard: false,
+  hints: true,
+  allow: true,
+  force: false
+};
+
+let settings = { ...defaults };
+let activity = null;
+
+const number = value => value.toLocaleString('en-US');
+
+function validSettings(s) {
+  return s &&
+    ['build', 'read', 'mixed'].includes(s.mode) &&
+    ['min', 'max', 'count'].every(key =>
+      typeof s[key] === 'string' && s[key].length <= 6
+    ) &&
+    ['showCounts', 'standard', 'hints', 'allow', 'force']
+      .every(key => typeof s[key] === 'boolean') &&
+    (!s.force || s.allow);
+}
+
+// Check the numbers a teacher typed, or explain what to change.
+function limits(c) {
+  if (![c.min, c.max].every(text => /^\d+$/.test(text))) {
+    throw new Error('Enter whole numbers for the smallest and largest number.');
+  }
+
+  const min = Number(c.min);
+  const max = Number(c.max);
+  const count = Number(c.count);
+
+  if (min < 1 || max > 9999) {
+    throw new Error('Use numbers from 1 to 9,999.');
+  }
+
+  if (min > max) {
+    throw new Error('The smallest number must be no greater than the largest.');
+  }
+
+  if (!/^\d+$/.test(c.count) || count < 1 || count > 50) {
+    throw new Error('Choose from 1 to 50 questions.');
+  }
+
+  return { min, max, count };
+}
+
+const blocksFor = c => BLOCKS.filter(block => block.value <= Number(c.max));
+
+// How many of each block the usual way of writing a number calls for.
+function digits(value) {
+  const counts = {};
+  let rest = value;
+
+  BLOCKS.forEach(block => {
+    counts[block.id] = Math.floor(rest / block.value);
+    rest %= block.value;
+  });
+
+  return counts;
+}
+
+const total = counts =>
+  BLOCKS.reduce((sum, block) => sum + (counts[block.id] || 0) * block.value, 0);
+
+function inWords(value) {
+  const counts = digits(value);
+
+  const parts = BLOCKS
+    .filter(block => counts[block.id])
+    .map(block =>
+      counts[block.id] + ' ' + block.word + (counts[block.id] === 1 ? '' : 's')
+    );
+
+  return parts.length > 1
+    ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1]
+    : parts[0];
+}
+
+const signature = q => q.kind === 'build'
+  ? BLOCKS.map(block => q.counts[block.id]).join('|')
+  : q.entry;
+
+const answerOf = q => q.kind === 'build'
+  ? total(q.counts)
+  : q.entry === '' ? null : Number(q.entry);
+
+function validActivity(a) {
+  if (
+    !a ||
+    !validSettings(a.config) ||
+    !['active', 'complete', 'ended'].includes(a.status) ||
+    !Array.isArray(a.questions) ||
+    !Number.isInteger(a.index)
+  ) return false;
+
+  let range;
+
+  try {
+    range = limits(a.config);
+  } catch (error) {
+    return false;
+  }
+
+  const allowed = blocksFor(a.config).map(block => block.id);
+
+  return a.questions.length === range.count &&
+    a.index >= 0 &&
+    a.index < a.questions.length &&
+    a.questions.every(q =>
+      q &&
+      ['build', 'read'].includes(q.kind) &&
+      Number.isInteger(q.target) &&
+      q.target >= range.min && q.target <= range.max &&
+      q.counts &&
+      BLOCKS.every(block =>
+        Number.isInteger(q.counts[block.id]) &&
+        q.counts[block.id] >= 0 &&
+        q.counts[block.id] <= (allowed.includes(block.id) ? MAX_EACH : 0)
+      ) &&
+      typeof q.entry === 'string' && /^\d{0,4}$/.test(q.entry) &&
+      (q.last === null || Number.isInteger(q.last) && q.last >= 0) &&
+      (q.lastSig === null || typeof q.lastSig === 'string') &&
+      (q.last === null) === (q.lastSig === null) &&
+      Number.isInteger(q.wrong) && q.wrong >= 0 &&
+      typeof q.correct === 'boolean' &&
+      (!q.correct || q.last === q.target && answerOf(q) === q.target)
+    );
+}
+
+const saved = readStored(KEY);
+
+if (saved?.version === 1 && validSettings(saved.settings)) {
+  settings = saved.settings;
+  if (validActivity(saved.activity)) activity = saved.activity;
+}
+
+function save() {
+  writeStored(KEY, { version: 1, settings, activity });
+}
+
+function readSettings() {
+  return {
+    mode: $('mode').value,
+    min: $('minimum').value.trim(),
+    max: $('maximum').value.trim(),
+    count: $('count').value.trim(),
+    showCounts: $('show-counts').checked,
+    standard: $('standard').checked,
+    hints: $('hints').checked,
+    allow: $('allow').checked,
+    force: $('allow').checked && $('force').checked
+  };
+}
+
+function sync() {
+  $('force').disabled = !$('allow').checked;
+  if (!$('allow').checked) $('force').checked = false;
+}
+
+function fillSettings() {
+  $('mode').value = settings.mode;
+  $('minimum').value = settings.min;
+  $('maximum').value = settings.max;
+  $('count').value = settings.count;
+  $('show-counts').checked = settings.showCounts;
+  $('standard').checked = settings.standard;
+  $('hints').checked = settings.hints;
+  $('allow').checked = settings.allow;
+  $('force').checked = settings.force;
+  sync();
+}
+
+function start() {
+  const chosen = readSettings();
+  let range;
+
+  try {
+    if (!validSettings(chosen)) throw new Error('Please check the settings.');
+    range = limits(chosen);
+  } catch (error) {
+    $('setup-message').textContent = error.message;
+    return;
+  }
+
+  settings = chosen;
+
+  activity = {
+    status: 'active',
+    index: 0,
+    config: clone(chosen),
+    questions: Array.from({ length: range.count }, () => ({
+      kind: chosen.mode === 'mixed'
+        ? (Math.random() < .5 ? 'build' : 'read')
+        : chosen.mode,
+      target: range.min +
+        Math.floor(Math.random() * (range.max - range.min + 1)),
+      counts: { thousand: 0, hundred: 0, ten: 0, one: 0 },
+      entry: '',
+      last: null,
+      lastSig: null,
+      wrong: 0,
+      correct: false
+    }))
+  };
+
+  $('setup-message').textContent = '';
+  save();
+  render();
+}
+
+const current = () => activity.questions[activity.index];
+
+const locked = () =>
+  current().correct || current().last !== null && !activity.config.allow;
+
+const canNext = () =>
+  current().last !== null && (current().correct || !activity.config.force);
+
+function blockElement(block, tag = 'span') {
+  const element = document.createElement(tag);
+  element.className = 'block ' + block.id;
+  return element;
+}
+
+function describe() {
+  const q = current();
+  const c = activity.config;
+  const building = q.kind === 'build';
+
+  if (q.correct) {
+    setFeedback(
+      'Exactly right! ' + number(q.target) + ' is ' + inWords(q.target) + '.',
+      'good'
+    );
+  } else if (q.last !== null && signature(q) === q.lastSig) {
+    let text;
+
+    if (q.last === q.target) {
+      // The right amount, but not yet with the fewest blocks.
+      text = 'That makes ' + number(q.target) + ', but it can be built ' +
+        'with fewer blocks. Trade 10 of one block for the next size up.';
+    } else {
+      text = 'Not quite.';
+
+      if (c.hints) {
+        text += building
+          ? ' Your blocks make too ' + (q.last < q.target ? 'little.' : 'much.')
+          : ' Your number is too ' + (q.last < q.target ? 'low.' : 'high.');
+      }
+    }
+
+    if (!c.allow) {
+      text += ' ' + number(q.target) + ' is ' + inWords(q.target) + '.';
+    } else {
+      text += c.force ? ' Change your answer and try again.'
+        : ' Try again, or continue.';
+    }
+
+    setFeedback(text, 'bad');
+  } else {
+    setFeedback(q.last !== null ? 'Answer changed. Check your new answer.' : '');
+  }
+}
+
+// Redraw the mat, the bank, the number pad, and the buttons.
+function refresh() {
+  const q = current();
+  const c = activity.config;
+  const building = q.kind === 'build';
+  const counts = building ? q.counts : digits(q.target);
+  const types = blocksFor(c);
+
+  $('columns').replaceChildren(...types.map(block => {
+    const column = document.createElement('div');
+    const heading = document.createElement('h3');
+    const name = document.createElement('span');
+    const area = document.createElement('div');
+
+    column.className = 'column' +
+      (block.id === 'thousand' || block.id === 'hundred' ? ' wide' : '');
+
+    name.textContent = block.column;
+    heading.append(name);
+
+    if (building && c.showCounts) {
+      const count = document.createElement('span');
+      count.className = 'count';
+      count.textContent = counts[block.id];
+      heading.append(count);
+    }
+
+    area.className = 'blocks ' + block.column.toLowerCase();
+
+    for (let n = 0; n < counts[block.id]; n++) {
+      const piece = blockElement(block, building ? 'button' : 'span');
+
+      if (building) {
+        piece.type = 'button';
+        piece.disabled = locked();
+        piece.setAttribute('aria-label', 'Remove one ' + block.name.toLowerCase());
+        piece.onclick = () => changeBlocks(block.id, -1);
+      }
+
+      area.append(piece);
+    }
+
+    column.append(heading, area);
+    return column;
+  }));
+
+  $('bank-list').replaceChildren(...types.map(block => {
+    const button = document.createElement('button');
+    const caption = document.createElement('span');
+
+    button.type = 'button';
+    button.className = 'bank-block' +
+      (block.id === 'thousand' ? ' has-thousand' : '');
+    button.dataset.add = block.id;
+    button.disabled = locked() || q.counts[block.id] >= MAX_EACH;
+    button.setAttribute('aria-label', 'Add one ' + block.name.toLowerCase());
+
+    caption.className = 'caption';
+    caption.textContent = block.name + ' · ' + number(block.value);
+
+    button.append(blockElement(block), caption);
+    button.addEventListener('pointerdown', startDrag);
+
+    button.addEventListener('click', () => {
+      if (!suppressClick) changeBlocks(block.id, 1);
+    });
+
+    return button;
+  }));
+
+  $('total').textContent = c.showCounts
+    ? 'Total: ' + number(total(q.counts))
+    : 'Total hidden';
+
+  $('clear').disabled = locked() || total(q.counts) === 0;
+
+  $('entry').textContent = q.entry === '' ? 'Type the number' : number(Number(q.entry));
+  $('entry').classList.toggle('blank', q.entry === '');
+
+  $('keypad').querySelectorAll('button').forEach(button => {
+    button.disabled = locked();
+  });
+
+  const answer = answerOf(q);
+
+  $('check').hidden = locked();
+  $('check').disabled = !answer || signature(q) === q.lastSig;
+  $('check').textContent = q.last === null ? 'Check answer' : 'Check correction';
+
+  $('next').hidden = !canNext();
+  $('next').textContent = activity.index === activity.questions.length - 1
+    ? 'See results'
+    : 'Next number';
+
+  describe();
+}
+
+function render() {
+  if (!activity) { show('setup'); return; }
+  if (activity.status !== 'active') { results(); return; }
+
+  show('play');
+
+  const q = current();
+  const building = q.kind === 'build';
+
+  $('progress').textContent =
+    'Question ' + (activity.index + 1) + ' of ' + activity.questions.length;
+
+  $('prompt-label').textContent = building
+    ? 'Build this number'
+    : 'Read the blocks';
+
+  $('prompt').textContent = building ? number(q.target) : '?';
+
+  $('instruction').textContent = building
+    ? 'Add blocks to the mat until they make the number.'
+    : 'What number do the blocks show? Enter it on the number pad.';
+
+  $('work').className = 'work ' + (building ? 'building' : 'reading');
+  $('block-bank').hidden = !building;
+  $('mat-foot').hidden = !building;
+  $('keypad-panel').hidden = building;
+
+  refresh();
+}
+
+function changeBlocks(id, change) {
+  if (!activity || activity.status !== 'active') return;
+
+  const q = current();
+
+  if (q.kind !== 'build' || locked()) return;
+
+  const next = q.counts[id] + change;
+
+  if (next > MAX_EACH) {
+    setFeedback('The mat holds up to 20 of each block. Try a larger block.');
+    return;
+  }
+
+  if (next < 0) return;
+
+  q.counts[id] = next;
+  save();
+  refresh();
+
+  const block = BLOCKS.find(block => block.id === id);
+
+  announce(
+    (change > 0 ? 'Added one ' : 'Removed one ') + block.name.toLowerCase() +
+    '. ' + next + ' on the mat.'
+  );
+
+  // Keep keyboard focus useful after the blocks are redrawn.
+  if (change > 0) {
+    $('bank-list').querySelector('[data-add="' + id + '"]')
+      ?.focus({ preventScroll: true });
+  }
+}
+
+function handleDrop(source, zone) {
+  if (source.dataset.add && zone?.dataset.drop === 'mat') {
+    changeBlocks(source.dataset.add, 1);
+  }
+}
+
+$('clear').onclick = () => {
+  const q = current();
+
+  if (q.kind !== 'build' || locked()) return;
+
+  BLOCKS.forEach(block => { q.counts[block.id] = 0; });
+  save();
+  refresh();
+  announce('Mat cleared.');
+};
+
+function press(key) {
+  if (!activity || activity.status !== 'active') return;
+
+  const q = current();
+
+  if (q.kind !== 'read' || locked()) return;
+
+  if (key === 'clear') q.entry = '';
+  else if (key === 'back') q.entry = q.entry.slice(0, -1);
+  else if (q.entry.length < 4) q.entry = q.entry === '0' ? key : q.entry + key;
+
+  save();
+  refresh();
+}
+
+[
+  ['1', '1'], ['2', '2'], ['3', '3'],
+  ['4', '4'], ['5', '5'], ['6', '6'],
+  ['7', '7'], ['8', '8'], ['9', '9'],
+  ['clear', 'Clear'], ['0', '0'], ['back', '⌫ Undo']
+].forEach(([key, text]) => {
+  const button = document.createElement('button');
+
+  button.type = 'button';
+  button.textContent = text;
+  if (key.length > 1) button.className = 'wide';
+  if (key === 'back') button.setAttribute('aria-label', 'Remove the last digit');
+  button.onclick = () => press(key);
+  $('keypad').append(button);
+});
+
+// A real keyboard works as a number pad too.
+document.addEventListener('keydown', event => {
+  if (
+    $('play-view').hidden || $('confirm-dialog').open ||
+    event.ctrlKey || event.metaKey || event.altKey
+  ) return;
+
+  if (/^\d$/.test(event.key)) press(event.key);
+  else if (event.key === 'Backspace') press('back');
+});
+
+$('check').onclick = () => {
+  const q = current();
+  const answer = answerOf(q);
+
+  if (locked() || !answer || signature(q) === q.lastSig) return;
+
+  q.last = answer;
+  q.lastSig = signature(q);
+
+  q.correct = answer === q.target && (
+    q.kind === 'read' ||
+    !activity.config.standard ||
+    BLOCKS.every(block => q.counts[block.id] <= 9)
+  );
+
+  if (!q.correct) q.wrong++;
+
+  save();
+  refresh();
+
+  if (canNext() && locked()) $('next').focus();
+};
+
+$('next').onclick = () => {
+  if (!canNext()) return;
+
+  cancelDrag();
+
+  if (activity.index === activity.questions.length - 1) {
+    activity.status = 'complete';
+  } else {
+    activity.index++;
+  }
+
+  save();
+  render();
+};
+
+$('end').onclick = () => ask(
+  'End this activity?',
+  'Show the results for the answers checked so far?',
+  () => {
+    cancelDrag();
+    activity.status = 'ended';
+    save();
+    results();
+  }
+);
+
+$('back').onclick = () => {
+  activity = null;
+  fillSettings();
+  save();
+  show('setup');
+};
+
+$('again').onclick = () => {
+  settings = clone(activity.config);
+  fillSettings();
+  start();
+};
+
+function results() {
+  show('results');
+
+  const questions = activity.questions;
+  const attempted = questions.filter(q => q.last !== null).length;
+
+  $('results-title').textContent =
+    activity.status === 'complete' ? 'Activity complete!' : 'Activity ended';
+
+  $('results-description').textContent =
+    attempted + ' of ' + questions.length + ' numbers attempted. ' +
+    'Each submitted wrong answer counts as an incorrect attempt.';
+
+  showStats([
+    ['Correct first try', questions.filter(q => q.correct && !q.wrong).length],
+    ['Corrected answers', questions.filter(q => q.correct && q.wrong).length],
+    ['Incorrect attempts', questions.reduce((sum, q) => sum + q.wrong, 0)]
+  ]);
+
+  showRows(questions.map((q, index) => [
+    index + 1,
+    q.kind === 'build' ? 'Build the number' : 'Read the blocks',
+    number(q.target),
+    q.last === null ? '—' : number(q.last),
+    q.wrong,
+    q.last === null
+      ? 'Not attempted'
+      : q.correct
+        ? (q.wrong ? 'Corrected' : 'Correct first try')
+        : 'Incorrect'
+  ]));
+}
+
+$('setup-form').onsubmit = event => {
+  event.preventDefault();
+  start();
+};
+
+['input', 'change'].forEach(name =>
+  $('setup-form').addEventListener(name, () => {
+    sync();
+
+    const chosen = readSettings();
+
+    if (validSettings(chosen)) {
+      settings = chosen;
+      save();
+    }
+  })
+);
+
+fillSettings();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Pick a random name, make random groups, and run a large countdown timer on a classroom display. An Interactive Classroom tool.">
+<title>Picker &amp; Timer · Interactive Classroom</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: #223e38;
+    background: #f6f7f2;
+  }
+
+  body { margin: 0; }
+  button, input, select, textarea { font: inherit; }
+  [hidden] { display: none !important; }
+
+  button, a.home {
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 1px solid #ced8d0;
+    border-radius: 10px;
+    background: white;
+    color: #29483e;
+    font-weight: 650;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  button:hover, a.home:hover { background: #edf3ed; }
+  button:disabled { opacity: .48; cursor: default; }
+
+  button:focus-visible, a:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 3px solid #b98b24;
+    outline-offset: 4px;
+  }
+
+  .primary { background: #285f4c; border-color: #285f4c; color: white; }
+  .primary:hover { background: #174d3a; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 22px 4vw;
+    background: #fffef9;
+    border-bottom: 1px solid #dce2d8;
+  }
+
+  header strong { display: block; font-size: 25px; }
+  small, .muted { color: #687b70; line-height: 1.6; }
+  .home { display: inline-flex; align-items: center; text-decoration: none; }
+  .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .center { justify-content: center; }
+
+  main { max-width: 1400px; margin: auto; padding: 28px 3vw; }
+  h1 { font-size: clamp(28px, 4vw, 42px); letter-spacing: -1px; margin: 0 0 10px; }
+  h2 { font-size: 21px; margin: 0 0 12px; }
+  h3 { font-size: 17px; margin: 0 0 10px; }
+  p { line-height: 1.6; color: #687b70; margin: 0 0 14px; }
+
+  .panel {
+    margin-top: 22px;
+    padding: clamp(20px, 3vw, 32px);
+    background: #fffefa;
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+  }
+
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .row { display: flex; gap: 15px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 120px; }
+  .field { margin-bottom: 20px; }
+
+  label { display: block; font-weight: 650; font-size: 14px; margin-bottom: 8px; }
+
+  input:not([type=checkbox]):not([type=file]), select, textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px;
+    border: 1px solid #cbd6c7;
+    border-radius: 8px;
+    color: #223e38;
+    background: white;
+  }
+
+  textarea { min-height: 220px; line-height: 1.5; resize: vertical; }
+
+  .check { display: flex; align-items: center; gap: 12px; min-height: 46px; }
+  .check input { width: 22px; height: 22px; accent-color: #285f4c; flex-shrink: 0; }
+  .check label { margin: 0; cursor: pointer; }
+  .nested { padding-left: 34px; }
+
+  .notice { min-height: 26px; color: #a34539; margin-top: 14px; }
+  .notice.ok { color: #28633e; }
+
+  .topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .badge { background: #e6eddf; border-radius: 25px; padding: 10px 17px; font-size: 14px; }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #687b70;
+  }
+
+  .question { text-align: center; padding: 20px 0 8px; }
+
+  .prompt {
+    font-size: clamp(46px, 7vw, 84px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.2;
+    margin: 6px 0 12px;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  /* Draggable tiles and the places they can be dropped. */
+  .tile {
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 2px solid #adc3ad;
+    border-radius: 9px;
+    background: #fffefa;
+    box-shadow: 0 3px 0 #dce1d4;
+    font-size: 22px;
+    line-height: 1.3;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .tile[aria-pressed=true] { outline: 3px solid #c7942f; outline-offset: 3px; }
+  .tile.good { background: #e5f3e4; border-color: #418251; }
+  .tile.bad { background: #fff0eb; border-color: #bb6658; }
+
+  .bank {
+    margin-top: 18px;
+    padding: 22px;
+    border: 2px dashed #c6d2bd;
+    border-radius: 16px;
+    background: #eef1e8;
+    min-width: 0;
+  }
+
+  .bank-list {
+    display: flex;
+    gap: 13px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    min-height: 60px;
+  }
+
+  .over { background: #fff4d2; box-shadow: 0 0 0 4px #e0be62; }
+  .source-drag { opacity: .3; }
+
+  .ghost {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: .96;
+    transform: rotate(-4deg);
+    margin: 0;
+    max-width: 320px;
+    box-shadow: 0 12px 30px #223e3833;
+  }
+
+  .empty { color: #7c8c7f; font-size: 14px; line-height: 1.6; padding: 14px 0; pointer-events: none; }
+
+  .selection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+    padding: 12px 16px;
+    border: 1px solid #eadfbe;
+    border-radius: 11px;
+    background: #fff9e9;
+    color: #7d5d24;
+    line-height: 1.5;
+  }
+
+  .feedback {
+    min-height: 68px;
+    padding: 19px 5px;
+    text-align: center;
+    font-size: 21px;
+    font-weight: 650;
+  }
+
+  .feedback.good { color: #28633e; }
+  .feedback.bad { color: #a34539; }
+
+  .stats { display: flex; gap: 15px; flex-wrap: wrap; margin: 24px 0; }
+  .stat { flex: 1; min-width: 150px; padding: 20px; background: #eef1e8; border-radius: 12px; }
+  .stat strong { display: block; font-size: 34px; }
+
+  .table-wrap { overflow: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #dce2d8; }
+
+  dialog {
+    width: min(460px, calc(100% - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    padding: 28px;
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+    background: #fffefa;
+    color: #223e38;
+    box-shadow: 0 20px 80px #223e3840;
+  }
+
+  dialog::backdrop { background: #14281e88; }
+
+  footer { text-align: center; color: #708076; font-size: 13px; line-height: 1.6; padding: 25px 0; }
+  footer a { color: inherit; }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  @media (max-width: 850px) {
+    .setup-grid { grid-template-columns: 1fr; }
+    .tile { font-size: 19px; }
+    main { padding: 24px 14px; }
+  }
+
+  .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .tools-grid .panel { margin-top: 0; min-width: 0; }
+
+  .picked {
+    display: grid;
+    place-items: center;
+    min-height: 170px;
+    margin: 6px 0 18px;
+    padding: 18px;
+    background: #eef1e8;
+    border-radius: 16px;
+    text-align: center;
+    font-size: clamp(34px, 5vw, 66px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    overflow-wrap: anywhere;
+  }
+
+  .picked.idle { color: #8e9b8b; font-size: 20px; font-weight: 500; letter-spacing: 0; }
+  .picked.rolling { color: #687b70; }
+  .picked.landed { background: #fff4d2; }
+
+  #names { min-height: 180px; }
+
+  .history { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0 0; padding: 0; list-style: none; }
+  .history li { padding: 6px 12px; background: #e6eddf; border-radius: 20px; font-size: 14px; }
+
+  .groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 16px; }
+  .group { padding: 14px 16px; background: #eef1e8; border-radius: 12px; }
+  .group h3 { margin-bottom: 6px; }
+  .group ul { margin: 0; padding-left: 20px; line-height: 1.7; }
+
+  .inline { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+  .inline > div { flex: 1; min-width: 110px; }
+
+  .clock {
+    margin: 6px 0 14px;
+    padding: 20px 10px;
+    background: #eef1e8;
+    border-radius: 16px;
+    text-align: center;
+    font-size: clamp(64px, 11vw, 150px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -3px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .clock.low { color: #a34539; }
+  .clock.done { background: #a34539; color: white; font-size: clamp(40px, 7vw, 90px); letter-spacing: -1px; animation: pulse 1s 6; }
+
+  @keyframes pulse { 50% { background: #c7604f; } }
+
+  .bar { height: 14px; margin-bottom: 18px; background: #e3e8dc; border-radius: 10px; overflow: hidden; }
+  .bar div { height: 100%; width: 100%; background: #285f4c; border-radius: 10px; }
+  .bar.low div { background: #a34539; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .presets button { padding: 10px 14px; }
+  .presets button[aria-pressed=true] { background: #fff4d2; border-color: #c7942f; }
+
+  @media (prefers-reduced-motion: reduce) { .clock.done { animation: none; } }
+  @media (max-width: 950px) { .tools-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <strong>Picker &amp; Timer</strong>
+    <small>Interactive Classroom · Fair turns and time well kept.</small>
+  </div>
+  <div class="actions">
+    <a class="home" href="../">Classroom home</a>
+    <button id="fullscreen" type="button">Full screen</button>
+  </div>
+</header>
+
+<main>
+  <h1>Whose turn? How long?</h1>
+  <p>Pick names fairly, make random groups, and keep time where everyone can see it.</p>
+
+  <div class="tools-grid" style="margin-top:22px">
+    <section class="panel" aria-labelledby="picker-title">
+      <h2 id="picker-title">Name picker</h2>
+
+      <div class="picked idle" id="picked" role="status" aria-live="polite">Press “Pick a name”.</div>
+
+      <div class="actions">
+        <button id="pick" class="primary" type="button">Pick a name</button>
+        <button id="start-over" type="button">Start over</button>
+      </div>
+
+      <p id="pool-note" style="margin-top:12px"></p>
+      <ul class="history" id="history" aria-label="Names already picked"></ul>
+
+      <div class="field" style="margin-top:22px">
+        <label for="names">Names · one per line</label>
+        <textarea id="names" spellcheck="false" placeholder="Ava&#10;Ben&#10;Carlos"></textarea>
+        <small>Up to 200 names. They are kept in this browser only.</small>
+      </div>
+
+      <div class="check">
+        <input id="no-repeat" type="checkbox">
+        <label for="no-repeat">Give everyone a turn before repeating a name</label>
+      </div>
+
+      <h2 style="margin-top:26px">Random groups</h2>
+      <div class="inline">
+        <div>
+          <label for="group-size">Students in each group</label>
+          <select id="group-size">
+            <option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>8</option>
+          </select>
+        </div>
+        <button id="make-groups" type="button">Make groups</button>
+      </div>
+      <div class="groups" id="groups" aria-live="polite"></div>
+      <div id="picker-message" class="notice" role="status"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="timer-title">
+      <h2 id="timer-title">Countdown timer</h2>
+
+      <div class="clock" id="clock" role="timer" aria-live="off"></div>
+      <div class="bar" id="bar"><div id="bar-fill"></div></div>
+
+      <div class="actions" style="margin-bottom:22px">
+        <button id="toggle" class="primary" type="button">Start</button>
+        <button id="reset" type="button">Reset</button>
+        <button id="add-minute" type="button">+ 1 minute</button>
+      </div>
+
+      <div class="presets" id="presets" role="group" aria-label="Quick times"></div>
+
+      <div class="inline">
+        <div>
+          <label for="minutes">Minutes</label>
+          <input id="minutes" type="number" min="0" max="180" step="1">
+        </div>
+        <div>
+          <label for="seconds">Seconds</label>
+          <input id="seconds" type="number" min="0" max="59" step="1">
+        </div>
+        <button id="set-time" type="button">Set time</button>
+      </div>
+
+      <div class="check" style="margin-top:14px">
+        <input id="sound" type="checkbox">
+        <label for="sound">Play a chime when time is up</label>
+      </div>
+
+      <div id="timer-message" class="notice" role="status"></div>
+      <p><small>The timer keeps running while you pick names. Timers can run for up to 3 hours.</small></p>
+    </section>
+  </div>
+
+  <footer><span id="save-status">Settings and progress save in this browser on this device.</span></footer>
+  <div id="announce" class="sr" aria-live="polite"></div>
+</main>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-message"></p>
+    <div class="actions" style="justify-content:flex-end;margin-top:24px">
+      <button value="cancel" autofocus>Cancel</button>
+      <button value="yes" class="primary">Continue</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+
+const SAVED_TEXT = 'Settings and progress save in this browser on this device.';
+
+function shuffled(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function announce(text) {
+  $('announce').textContent = text;
+}
+
+// Everything is kept in this browser; nothing is sent to a server.
+function readStored(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeStored(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    $('save-status').textContent = SAVED_TEXT;
+    return true;
+  } catch (error) {
+    $('save-status').textContent =
+      'Browser storage is unavailable or full. This session cannot be saved.';
+    return false;
+  }
+}
+
+// An on-page confirmation that also works in full screen.
+let pendingAction = null;
+
+function ask(title, message, action) {
+  $('confirm-title').textContent = title;
+  $('confirm-message').textContent = message;
+  pendingAction = action;
+
+  const dialog = $('confirm-dialog');
+  dialog.returnValue = 'cancel';
+  if (!dialog.open) dialog.showModal();
+}
+
+$('confirm-dialog').addEventListener('close', () => {
+  const action = pendingAction;
+  pendingAction = null;
+  if ($('confirm-dialog').returnValue === 'yes') action?.();
+});
+
+$('fullscreen').onclick = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (error) {
+    $('save-status').textContent =
+      'Full screen is unavailable. Use your browser’s full-screen command.';
+  }
+};
+
+document.addEventListener('fullscreenchange', () => {
+  $('fullscreen').textContent =
+    document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+});
+
+const KEY = 'interactive-picker-timer-v1';
+const MAX_NAMES = 200;
+const MAX_NAME_LENGTH = 60;
+const MAX_SECONDS = 3 * 60 * 60;
+const PRESETS = [30, 60, 120, 180, 300, 600, 900];
+
+const defaults = {
+  names: '',
+  noRepeat: true,
+  picked: [],
+  groupSize: '4',
+  duration: 300,
+  sound: true
+};
+
+let settings = { ...defaults, picked: [] };
+let rolling = null;
+
+// The timer counts down to a moment in time, so it stays accurate even
+// when the browser is busy.
+let remaining = 0;     // seconds left while paused
+let endsAt = null;     // timestamp while running
+let ticker = null;
+let audio = null;
+
+function validSettings(s) {
+  return s &&
+    typeof s.names === 'string' && s.names.length <= 20000 &&
+    typeof s.noRepeat === 'boolean' &&
+    Array.isArray(s.picked) &&
+    s.picked.length <= MAX_NAMES &&
+    s.picked.every(name => typeof name === 'string') &&
+    ['2', '3', '4', '5', '6', '8'].includes(s.groupSize) &&
+    Number.isInteger(s.duration) &&
+    s.duration >= 1 && s.duration <= MAX_SECONDS &&
+    typeof s.sound === 'boolean';
+}
+
+const saved = readStored(KEY);
+
+if (saved?.version === 1 && validSettings(saved.settings)) {
+  settings = saved.settings;
+}
+
+function save() {
+  writeStored(KEY, { version: 1, settings });
+}
+
+// ---- Name picker ----
+
+function nameList() {
+  return settings.names
+    .split(/\r?\n/)
+    .map(name => name.trim().slice(0, MAX_NAME_LENGTH))
+    .filter(Boolean)
+    .slice(0, MAX_NAMES);
+}
+
+// Names still waiting for a turn. Repeated names each get their own turn.
+function waiting() {
+  const names = nameList();
+
+  if (!settings.noRepeat) return names;
+
+  const used = [...settings.picked];
+
+  return names.filter(name => {
+    const at = used.indexOf(name);
+    if (at < 0) return true;
+    used.splice(at, 1);
+    return false;
+  });
+}
+
+function showPicked(text, state) {
+  $('picked').textContent = text;
+  $('picked').className = 'picked' + (state ? ' ' + state : '');
+}
+
+function renderPicker() {
+  const names = nameList();
+  const pool = waiting();
+
+  // Forget turns for names that are no longer on the list.
+  settings.picked = settings.picked.filter(name => names.includes(name));
+
+  $('pick').disabled = !names.length || rolling !== null;
+  $('start-over').disabled = !settings.picked.length || rolling !== null;
+  $('make-groups').disabled = names.length < 2;
+
+  $('pool-note').textContent = !names.length
+    ? 'Add some names below to get started.'
+    : settings.noRepeat
+      ? pool.length
+        ? pool.length + ' of ' + names.length + ' still waiting for a turn.'
+        : 'Everyone has had a turn. The next pick starts a new round.'
+      : names.length + ' names. Any name can come up each time.';
+
+  $('history').replaceChildren(...settings.picked.map(name => {
+    const item = document.createElement('li');
+    item.textContent = name;
+    return item;
+  }));
+}
+
+function pickName() {
+  if (rolling !== null) return;
+
+  const names = nameList();
+
+  if (!names.length) return;
+
+  let pool = waiting();
+
+  if (!pool.length) {
+    settings.picked = [];
+    pool = names;
+  }
+
+  const winner = pool[Math.floor(Math.random() * pool.length)];
+
+  const land = () => {
+    rolling = null;
+    if (settings.noRepeat) settings.picked.push(winner);
+    showPicked(winner, 'landed');
+    save();
+    renderPicker();
+  };
+
+  // Flick through a few names first, unless motion should be kept low.
+  if (
+    names.length < 2 ||
+    matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    land();
+    return;
+  }
+
+  let flicks = 0;
+
+  $('picked').setAttribute('aria-live', 'off');
+
+  rolling = setInterval(() => {
+    flicks++;
+
+    if (flicks >= 14) {
+      clearInterval(rolling);
+      $('picked').setAttribute('aria-live', 'polite');
+      land();
+      return;
+    }
+
+    showPicked(names[Math.floor(Math.random() * names.length)], 'rolling');
+  }, 90);
+
+  renderPicker();
+}
+
+$('pick').onclick = pickName;
+
+$('start-over').onclick = () => {
+  settings.picked = [];
+  showPicked('Press “Pick a name”.', 'idle');
+  save();
+  renderPicker();
+};
+
+$('names').addEventListener('input', () => {
+  const lines = $('names').value.split(/\r?\n/).filter(line => line.trim());
+
+  $('picker-message').textContent = lines.length > MAX_NAMES
+    ? 'Only the first ' + MAX_NAMES + ' names are used.'
+    : '';
+
+  settings.names = $('names').value.slice(0, 20000);
+  save();
+  renderPicker();
+});
+
+$('no-repeat').addEventListener('change', () => {
+  settings.noRepeat = $('no-repeat').checked;
+  if (!settings.noRepeat) settings.picked = [];
+  save();
+  renderPicker();
+});
+
+$('group-size').addEventListener('change', () => {
+  settings.groupSize = $('group-size').value;
+  save();
+});
+
+$('make-groups').onclick = () => {
+  const names = shuffled(nameList());
+  const size = Number(settings.groupSize);
+  const groups = [];
+
+  for (let at = 0; at < names.length; at += size) {
+    groups.push(names.slice(at, at + size));
+  }
+
+  // Share out a lone leftover student rather than leave them alone.
+  if (groups.length > 1 && groups[groups.length - 1].length === 1) {
+    groups[groups.length - 2].push(groups.pop()[0]);
+  }
+
+  $('groups').replaceChildren(...groups.map((members, index) => {
+    const box = document.createElement('div');
+    const heading = document.createElement('h3');
+    const list = document.createElement('ul');
+
+    box.className = 'group';
+    heading.textContent = 'Group ' + (index + 1);
+
+    members.forEach(name => {
+      const item = document.createElement('li');
+      item.textContent = name;
+      list.append(item);
+    });
+
+    box.append(heading, list);
+    return box;
+  }));
+};
+
+// ---- Countdown timer ----
+
+const secondsLeft = () => endsAt === null
+  ? remaining
+  : Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+
+function clockText(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor(seconds % 3600 / 60);
+  const pad = value => String(value).padStart(2, '0');
+
+  return (hours ? hours + ':' + pad(minutes) : minutes) + ':' + pad(seconds % 60);
+}
+
+function renderTimer() {
+  const left = secondsLeft();
+  const finished = left === 0;
+  const low = !finished && left <= 10;
+
+  $('clock').textContent = finished ? 'Time’s up!' : clockText(left);
+  $('clock').className = 'clock' + (finished ? ' done' : low ? ' low' : '');
+  $('bar').className = 'bar' + (low ? ' low' : '');
+  $('bar-fill').style.width =
+    Math.min(100, left / settings.duration * 100) + '%';
+
+  $('toggle').textContent = endsAt !== null
+    ? 'Pause'
+    : left < settings.duration && !finished ? 'Resume' : 'Start';
+
+  $('toggle').disabled = finished;
+  $('add-minute').disabled = left + 60 > MAX_SECONDS;
+
+  $('presets').querySelectorAll('button').forEach(button => {
+    button.setAttribute(
+      'aria-pressed',
+      String(Number(button.dataset.seconds) === settings.duration)
+    );
+  });
+}
+
+function chime() {
+  if (!settings.sound) return;
+
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+
+    [0, .35, .7].forEach((delay, index) => {
+      const tone = audio.createOscillator();
+      const volume = audio.createGain();
+      const at = audio.currentTime + delay;
+
+      tone.type = 'sine';
+      tone.frequency.value = index === 2 ? 1047 : 784;
+      volume.gain.setValueAtTime(.0001, at);
+      volume.gain.exponentialRampToValueAtTime(.4, at + .02);
+      volume.gain.exponentialRampToValueAtTime(.0001, at + .32);
+      tone.connect(volume).connect(audio.destination);
+      tone.start(at);
+      tone.stop(at + .34);
+    });
+  } catch (error) {
+    $('timer-message').textContent = 'This browser could not play the chime.';
+  }
+}
+
+function stopTicking() {
+  clearInterval(ticker);
+  ticker = null;
+}
+
+function tick() {
+  if (endsAt !== null && secondsLeft() === 0) {
+    endsAt = null;
+    remaining = 0;
+    stopTicking();
+    chime();
+  }
+
+  renderTimer();
+}
+
+function setDuration(seconds) {
+  settings.duration = Math.max(1, Math.min(MAX_SECONDS, seconds));
+  endsAt = null;
+  remaining = settings.duration;
+  stopTicking();
+  $('minutes').value = Math.floor(settings.duration / 60);
+  $('seconds').value = settings.duration % 60;
+  $('timer-message').textContent = '';
+  save();
+  renderTimer();
+}
+
+$('toggle').onclick = () => {
+  if (endsAt === null) {
+    if (!remaining) return;
+
+    // Browsers only allow sound after a tap, so wake the audio up now.
+    if (settings.sound) {
+      try {
+        audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+        audio.resume();
+      } catch (error) {}
+    }
+
+    endsAt = Date.now() + remaining * 1000;
+    ticker = setInterval(tick, 200);
+  } else {
+    remaining = secondsLeft();
+    endsAt = null;
+    stopTicking();
+  }
+
+  renderTimer();
+};
+
+$('reset').onclick = () => setDuration(settings.duration);
+
+$('add-minute').onclick = () => {
+  const left = secondsLeft();
+
+  if (left + 60 > MAX_SECONDS) return;
+
+  if (endsAt !== null) endsAt += 60000;
+  else remaining = left + 60;
+
+  // A longer run needs a longer bar.
+  if (secondsLeft() > settings.duration) {
+    settings.duration = secondsLeft();
+    save();
+  }
+
+  renderTimer();
+};
+
+$('set-time').onclick = () => {
+  const minutes = Number($('minutes').value || 0);
+  const seconds = Number($('seconds').value || 0);
+  const total = minutes * 60 + seconds;
+
+  if (
+    !Number.isInteger(minutes) || !Number.isInteger(seconds) ||
+    minutes < 0 || seconds < 0 || seconds > 59 ||
+    total < 1 || total > MAX_SECONDS
+  ) {
+    $('timer-message').textContent =
+      'Enter a time from 1 second to 180 minutes, with seconds from 0 to 59.';
+    return;
+  }
+
+  setDuration(total);
+};
+
+$('sound').addEventListener('change', () => {
+  settings.sound = $('sound').checked;
+  save();
+});
+
+PRESETS.forEach(seconds => {
+  const button = document.createElement('button');
+
+  button.type = 'button';
+  button.dataset.seconds = seconds;
+  button.textContent = seconds < 60 ? seconds + ' sec' : seconds / 60 + ' min';
+  button.onclick = () => setDuration(seconds);
+  $('presets').append(button);
+});
+
+$('names').value = settings.names;
+$('no-repeat').checked = settings.noRepeat;
+$('group-size').value = settings.groupSize;
+$('sound').checked = settings.sound;
+
+remaining = settings.duration;
+$('minutes').value = Math.floor(settings.duration / 60);
+$('seconds').value = settings.duration % 60;
+
+renderPicker();
+renderTimer();
+</script>
+</body>
+</html>
