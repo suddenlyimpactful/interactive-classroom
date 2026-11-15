@@ -5,7 +5,7 @@ Visit http://classroom.frycloud.net to view and use the interactive classroom. T
 
 This classroom and these lessons are designed to be used without the need for any database or server-side scripts. They use javascript to run directly in your browser, with sessions saved to the browser file storage.
 
-Word Sort, Matching Pairs, and Label the Diagram allow import/export of configured lessons, which allows teachers to share configurations or save them for future use (in case the browser cache gets cleared or when switching browsers). The other lessons available at this time are easy to configure on the fly, so there is not a need for import/export of settings at this time.
+Word Sort, Word Building, Matching Pairs, and Label the Diagram allow import/export of configured lessons, which allows teachers to share configurations or save them for future use (in case the browser cache gets cleared or when switching browsers). The other lessons available at this time are easy to configure on the fly, so there is not a need for import/export of settings at this time.
 
 ## Lessons and tools
 
