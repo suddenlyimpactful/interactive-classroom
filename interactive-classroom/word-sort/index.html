@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word Sort · Interactive Classroom</title>
+<style>
+  :root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: #223e38;
+    background: #f6f7f2;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  button, input, select, textarea { font: inherit; }
+  [hidden] { display: none !important; }
+
+  button, .home-link {
+    cursor: pointer;
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 1px solid #ced8d0;
+    border-radius: 10px;
+    background: white;
+    color: #29483e;
+    font-weight: 650;
+    touch-action: manipulation;
+  }
+
+  button:hover, .home-link:hover { background: #edf3ed; }
+
+  button:focus-visible, a:focus-visible,
+  input:focus-visible, select:focus-visible,
+  textarea:focus-visible {
+    outline: 3px solid #b98b24;
+    outline-offset: 3px;
+  }
+
+  .primary {
+    background: #285f4c;
+    color: white;
+    border-color: #285f4c;
+  }
+
+  .primary:hover { background: #174d3a; }
+
+  header {
+    padding: 24px 3vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    background: #fffef9;
+    border-bottom: 1px solid #dce2d8;
+  }
+
+  .brand strong { display: block; font-size: 27px; }
+  .brand small { color: #708076; }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .home-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  main { padding: 30px 3vw; }
+
+  .lesson-bar, .settings {
+    background: #fffefa;
+    border: 1px solid #d8dfd1;
+    border-radius: 15px;
+    margin-bottom: 24px;
+    padding: 22px;
+  }
+
+  .lesson-fields {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .lesson-fields > div {
+    flex: 1;
+    min-width: 190px;
+  }
+
+  .lesson-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .lesson-tools small {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 650;
+    margin-bottom: 8px;
+  }
+
+  input, select, textarea {
+    border: 1px solid #cbd6c7;
+    border-radius: 8px;
+    padding: 10px;
+    background: white;
+    width: 100%;
+    min-height: 44px;
+    color: #223e38;
+  }
+
+  input[type="color"] { padding: 5px; }
+  textarea { resize: vertical; min-height: 210px; }
+  small { color: #708076; line-height: 1.6; }
+
+  .status {
+    min-height: 24px;
+    margin-top: 12px;
+    color: #52705b;
+    font-size: 14px;
+  }
+
+  .status.error { color: #a34539; }
+
+  .settings h2 { margin: 0 0 18px; font-size: 21px; }
+
+  .setup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 28px;
+  }
+
+  .field { margin-bottom: 18px; }
+
+  .column-config {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 55px 110px;
+    gap: 9px;
+    margin-top: 12px;
+  }
+
+  .settings-bottom {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .intro {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+
+  h1 {
+    font-size: clamp(25px, 3vw, 38px);
+    margin: 0 0 7px;
+    letter-spacing: -1px;
+  }
+
+  p { margin: 0; color: #708076; line-height: 1.6; }
+
+  .progress {
+    font-size: 14px;
+    background: #e6eddf;
+    border-radius: 30px;
+    padding: 11px 18px;
+    white-space: nowrap;
+  }
+
+  .board {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  }
+
+  .column {
+    border: 3px solid var(--color);
+    border-radius: 17px;
+    background: #fffefa;
+    min-height: 330px;
+    overflow: hidden;
+    transition: background .15s, box-shadow .15s;
+  }
+
+  .column h2 {
+    font-size: 22px;
+    margin: 0;
+    padding: 20px;
+    border-bottom: 1px solid #e6e9df;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    background: #f1f4ef;
+    background: color-mix(in srgb, var(--color) 10%, white);
+  }
+
+  .count {
+    font-size: 13px;
+    font-weight: 500;
+    background: #ffffffb0;
+    border-radius: 20px;
+    min-width: 27px;
+    text-align: center;
+    padding: 5px;
+  }
+
+  .tiles {
+    display: flex;
+    gap: 12px;
+    align-content: flex-start;
+    flex-wrap: wrap;
+    padding: 20px;
+    min-height: 255px;
+  }
+
+  .hint {
+    color: #839486;
+    font-size: 14px;
+    text-align: center;
+    width: 100%;
+    align-self: center;
+    padding: 65px 0;
+    pointer-events: none;
+  }
+
+  .word {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+    box-shadow: 0 3px 0 #dce1d4;
+    border: 2px solid #b9c9b4;
+    background: #fffefa;
+    font-size: 24px;
+    font-weight: 600;
+    padding: 13px 20px;
+    border-radius: 11px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    line-height: 1.3;
+  }
+
+  .word[aria-pressed="true"] {
+    outline: 3px solid #c28d20;
+    outline-offset: 3px;
+  }
+
+  .word:active { cursor: grabbing; }
+
+  .bank {
+    margin-top: 26px;
+    border: 1px solid #d8dfd1;
+    background: #eef1e8;
+    border-radius: 17px;
+    min-height: 170px;
+  }
+
+  .bank-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 20px 22px 0;
+  }
+
+  .bank h2 { font-size: 17px; margin: 0; }
+  .bank .tiles { min-height: 105px; }
+
+  .over {
+    box-shadow: 0 0 0 5px #e0be62;
+    background: #fcf5d8;
+  }
+
+  .ghost {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+    margin: 0;
+    opacity: .96;
+    box-shadow: 0 15px 35px #213c3433;
+    transform: rotate(-3deg);
+  }
+
+  .drag-source { opacity: .22; }
+
+  footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    font-size: 13px;
+    color: #7b8b7f;
+    padding: 23px 2px;
+  }
+
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  @media (min-width: 1600px) {
+    .word { font-size: 30px; }
+    .column { min-height: 440px; }
+    .tiles { min-height: 360px; }
+    .bank .tiles { min-height: 115px; }
+  }
+
+  @media (max-width: 900px) {
+    .board {
+      grid-template-columns:
+        repeat(min(var(--cols), 3), minmax(0, 1fr));
+    }
+
+    .word { font-size: 21px; padding: 12px; }
+    .setup-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 580px) {
+    header { align-items: flex-start; flex-direction: column; }
+
+    .board {
+      grid-template-columns:
+        repeat(min(var(--cols), 2), minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .column h2 { font-size: 18px; padding: 13px; }
+    .tiles { padding: 12px; gap: 10px; }
+    .column { min-height: 260px; }
+    .intro { align-items: flex-start; flex-direction: column; }
+    footer { flex-direction: column; }
+    .word { font-size: 19px; }
+    .bank-head { align-items: flex-start; flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <strong>Word Sort</strong>
+    <small>A little movement. A lot of learning.</small>
+  </div>
+  <div class="actions">
+    <a class="home-link" href="/">Classroom home</a>
+    <button id="reset" type="button">↺ Reset words</button>
+    <button id="fullscreen" type="button">⛶ Full screen</button>
+    <button id="setup" class="primary" type="button"
+      aria-expanded="false" aria-controls="settings">
+      ⚙ Activity setup
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="lesson-bar" aria-label="Lesson management">
+    <div class="lesson-fields">
+      <div>
+        <label for="lesson-select">Saved lessons</label>
+        <select id="lesson-select"></select>
+      </div>
+      <div>
+        <label for="lesson-name">Name for a new lesson copy</label>
+        <input id="lesson-name" maxlength="100"
+          placeholder="e.g. Parts of speech">
+      </div>
+      <button id="save-lesson" class="primary" type="button">
+        Save as new lesson
+      </button>
+    </div>
+
+    <div class="lesson-tools">
+      <button id="export-lesson" type="button">↓ Export lesson</button>
+      <button id="import-lesson" type="button">↑ Import lesson</button>
+      <small>
+        Share a lesson file between teachers or computers.
+        Imported words start in the word bank.
+      </small>
+    </div>
+
+    <input id="import-file" type="file"
+      accept=".json,application/json" hidden>
+
+    <div id="lesson-status" class="status" role="status">
+      Changes save automatically.
+    </div>
+  </section>
+
+  <section id="settings" class="settings" hidden>
+    <h2>Make it your own</h2>
+
+    <form id="config">
+      <div class="setup-grid">
+        <div>
+          <div class="field">
+            <label for="title">Activity title</label>
+            <input id="title" maxlength="150">
+          </div>
+
+          <label for="number">Number of columns</label>
+          <select id="number">
+            <option>1</option><option>2</option><option>3</option>
+            <option>4</option><option>5</option><option>6</option>
+          </select>
+
+          <div class="column-config">
+            <small>Column title</small>
+            <small>Color</small>
+            <small>Border</small>
+          </div>
+
+          <div id="column-settings"></div>
+        </div>
+
+        <div>
+          <label for="words">Word list · one word or phrase per line</label>
+          <textarea id="words" rows="10"
+            placeholder="butterfly&#10;run&#10;bright blue"></textarea>
+          <small>
+            Each line becomes a tile. Repeated words are supported.
+            Applying an edited word list returns all words to the bank.
+            Up to 1,000 words or phrases, with 200 characters per tile.
+          </small>
+        </div>
+      </div>
+
+      <div class="settings-bottom">
+        <button class="primary" type="submit">Apply activity</button>
+        <span id="config-status" class="status" role="status"></span>
+      </div>
+    </form>
+  </section>
+
+  <div class="intro">
+    <div>
+      <h1 id="activity-title"></h1>
+      <p>Drag a word into a column. Change your mind? Move it again.</p>
+    </div>
+    <span id="progress" class="progress"></span>
+  </div>
+
+  <section id="board" class="board" aria-label="Sorting columns"></section>
+
+  <section id="bank" class="bank" data-zone="bank"
+    aria-label="Word bank" tabindex="0">
+    <div class="bank-head">
+      <h2>Word bank <span id="bank-count" class="count"></span></h2>
+      <small>Pick a word. Find its place.</small>
+    </div>
+    <div id="bank-tiles" class="tiles"></div>
+  </section>
+
+  <footer>
+    <span>
+      Drag with your finger or mouse · Or select a word, then tap a column
+    </span>
+    <span id="save-status">Saved on this device</span>
+  </footer>
+
+  <div id="announce" class="sr" aria-live="polite"></div>
+</main>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+
+const STORAGE_KEY = 'word-sort-lessons-v1';
+const OLD_STORAGE_KEY = 'word-sort-v1';
+const DRAFT_KEY = 'word-sort-setup-draft';
+
+const FILE_FORMAT = 'interactive-word-sort';
+const FILE_VERSION = 1;
+const MAX_FILE_BYTES = 1024 * 1024;
+const MAX_WORDS = 1000;
+const MAX_WORD_LENGTH = 200;
+
+const palette = [
+  '#6b9775', '#c49b51', '#7b91bc',
+  '#bd8291', '#8e86b3', '#5c9e9e'
+];
+
+const borderStyles = ['solid', 'dashed', 'dotted', 'double'];
+
+let state = {
+  title: 'Every word has a place.',
+  columns: [
+    { title: 'Nouns', color: palette[0], style: 'solid' },
+    { title: 'Verbs', color: palette[1], style: 'dashed' },
+    { title: 'Adjectives', color: palette[2], style: 'solid' }
+  ],
+  words: [
+    'butterfly', 'jump', 'bright', 'mountain',
+    'whisper', 'gentle', 'ocean', 'dance',
+    'curious', 'teacher', 'explore', 'colorful'
+  ].map((text, i) => ({ id: 'w' + i, text, zone: 'bank' }))
+};
+
+let lessons = [];
+let activeLesson = null;
+let selected = null;
+let drag = null;
+let suppressClick = false;
+let draft = [];
+let importBusy = false;
+
+function newId() {
+  return 'lesson-' + Date.now() + '-' +
+    Math.random().toString(36).slice(2, 10);
+}
+
+function validColumns(columns) {
+  return Array.isArray(columns) &&
+    columns.length >= 1 &&
+    columns.length <= 6 &&
+    columns.every(column =>
+      column &&
+      typeof column.title === 'string' &&
+      typeof column.color === 'string' &&
+      /^#[0-9a-f]{6}$/i.test(column.color) &&
+      borderStyles.includes(column.style)
+    );
+}
+
+function validActivity(value) {
+  return value &&
+    typeof value.title === 'string' &&
+    validColumns(value.columns) &&
+    Array.isArray(value.words) &&
+    value.words.every(word =>
+      word &&
+      typeof word.text === 'string' &&
+      typeof word.id === 'string' &&
+      (
+        word.zone === 'bank' ||
+        Number.isInteger(word.zone) &&
+        word.zone >= 0 &&
+        word.zone < value.columns.length
+      )
+    ) &&
+    new Set(value.words.map(word => word.id)).size === value.words.length;
+}
+
+// Retain compatibility with the original single-activity save.
+try {
+  const saved = JSON.parse(localStorage.getItem(OLD_STORAGE_KEY));
+  if (validActivity(saved)) state = saved;
+} catch (error) {}
+
+// Restore named lessons from the previous version.
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+  if (
+    saved &&
+    Array.isArray(saved.lessons) &&
+    saved.lessons.length &&
+    saved.lessons.every(lesson =>
+      lesson &&
+      typeof lesson.id === 'string' &&
+      typeof lesson.name === 'string' &&
+      validActivity(lesson.activity)
+    ) &&
+    new Set(saved.lessons.map(lesson => lesson.id)).size ===
+      saved.lessons.length
+  ) {
+    lessons = saved.lessons;
+    activeLesson = lessons.some(lesson => lesson.id === saved.active)
+      ? saved.active
+      : lessons[0].id;
+
+    state = clone(
+      lessons.find(lesson => lesson.id === activeLesson).activity
+    );
+  }
+} catch (error) {}
+
+if (!lessons.length) {
+  activeLesson = newId();
+  lessons = [{
+    id: activeLesson,
+    name: 'Parts of speech',
+    activity: clone(state)
+  }];
+}
+
+function setStatus(message, error = false) {
+  $('lesson-status').textContent = message;
+  $('lesson-status').classList.toggle('error', error);
+}
+
+function save() {
+  const current = lessons.find(lesson => lesson.id === activeLesson);
+  if (current) current.activity = clone(state);
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      active: activeLesson,
+      lessons
+    }));
+
+    $('save-status').textContent = 'Saved on this device';
+    return true;
+  } catch (error) {
+    $('save-status').textContent =
+      'Not saved · browser storage unavailable or full';
+
+    setStatus(
+      'Changes are currently in memory only. Export important lessons ' +
+      'before closing this page.',
+      true
+    );
+    return false;
+  }
+}
+
+function lessonOptions() {
+  $('lesson-select').replaceChildren(
+    ...lessons.map(lesson => new Option(lesson.name, lesson.id))
+  );
+
+  $('lesson-select').value = activeLesson;
+  $('lesson-name').value =
+    lessons.find(lesson => lesson.id === activeLesson)?.name || '';
+}
+
+function uniqueName(name) {
+  const names = new Set(lessons.map(lesson =>
+    lesson.name.trim().toLowerCase()
+  ));
+
+  if (!names.has(name.toLowerCase())) return name;
+
+  let suffix = 2;
+  let candidate;
+
+  do {
+    candidate = name.slice(0, 88) + ' (' + suffix++ + ')';
+  } while (names.has(candidate.toLowerCase()));
+
+  return candidate;
+}
+
+function closeSetup() {
+  $('settings').hidden = true;
+  $('setup').setAttribute('aria-expanded', 'false');
+}
+
+function setupMustBeApplied() {
+  if (!$('settings').hidden) {
+    setStatus('Click Apply activity before saving, exporting, or importing.');
+    return true;
+  }
+  return false;
+}
+
+$('save-lesson').onclick = () => {
+  if (setupMustBeApplied()) return;
+
+  const name = $('lesson-name').value.trim();
+
+  if (!name) {
+    setStatus('Enter a name for the new lesson.', true);
+    $('lesson-name').focus();
+    return;
+  }
+
+  save();
+
+  const savedName = uniqueName(name);
+  activeLesson = newId();
+
+  lessons.push({
+    id: activeLesson,
+    name: savedName,
+    activity: clone(state)
+  });
+
+  lessonOptions();
+
+  if (save()) {
+    setStatus('Saved "' + savedName + '". Changes now save automatically.');
+  }
+};
+
+$('lesson-select').onchange = () => {
+  save();
+  cancelDrag();
+
+  activeLesson = $('lesson-select').value;
+  state = clone(
+    lessons.find(lesson => lesson.id === activeLesson).activity
+  );
+
+  selected = null;
+  closeSetup();
+  lessonOptions();
+
+  const saved = save();
+  render();
+
+  if (saved) setStatus('Lesson loaded, including word positions.');
+};
+
+// Export a portable lesson without classroom word positions.
+$('export-lesson').onclick = () => {
+  if (setupMustBeApplied()) return;
+
+  const current = lessons.find(lesson => lesson.id === activeLesson);
+
+  const exported = {
+    format: FILE_FORMAT,
+    version: FILE_VERSION,
+    lesson: {
+      name: current.name,
+      title: state.title,
+      columns: state.columns.map(column => ({
+        title: column.title,
+        color: column.color,
+        style: column.style
+      })),
+      words: state.words.map(word => word.text)
+    }
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(exported, null, 2)],
+    { type: 'application/json;charset=utf-8' }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  const filename = current.name
+    .replace(/[^a-z0-9_-]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'lesson';
+
+  link.href = url;
+  link.download = filename + '.word-sort.json';
+  document.body.append(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+  setStatus(
+    'Lesson file download requested. It includes the columns and word list.'
+  );
+};
+
+$('import-lesson').onclick = () => {
+  if (setupMustBeApplied() || importBusy) return;
+  $('import-file').value = '';
+  $('import-file').click();
+};
+
+function parseLessonFile(text) {
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error('This file is not valid JSON.');
+  }
+
+  if (
+    !data ||
+    data.format !== FILE_FORMAT ||
+    data.version !== FILE_VERSION
+  ) {
+    throw new Error(
+      'Choose a Word Sort lesson file exported by this page.'
+    );
+  }
+
+  const lesson = data.lesson;
+
+  if (
+    !lesson ||
+    typeof lesson.name !== 'string' ||
+    !lesson.name.trim() ||
+    lesson.name.length > 100 ||
+    typeof lesson.title !== 'string' ||
+    lesson.title.length > 150 ||
+    !validColumns(lesson.columns) ||
+    lesson.columns.some(column =>
+      !column.title.trim() || column.title.length > 80
+    ) ||
+    !Array.isArray(lesson.words) ||
+    lesson.words.length > MAX_WORDS ||
+    lesson.words.some(word =>
+      typeof word !== 'string' ||
+      !word.trim() ||
+      word.length > MAX_WORD_LENGTH ||
+      /[\r\n]/.test(word)
+    )
+  ) {
+    throw new Error(
+      'The lesson file contains missing, invalid, or oversized lesson data.'
+    );
+  }
+
+  // Construct a fresh object using only the expected fields.
+  return {
+    name: lesson.name.trim(),
+    activity: {
+      title: lesson.title.trim() || 'Word Sort',
+      columns: lesson.columns.map(column => ({
+        title: column.title.trim(),
+        color: column.color,
+        style: column.style
+      })),
+      words: lesson.words.map((text, index) => ({
+        id: 'w' + index,
+        text: text.trim(),
+        zone: 'bank'
+      }))
+    }
+  };
+}
+
+$('import-file').onchange = async event => {
+  const file = event.target.files[0];
+  if (!file || importBusy) return;
+
+  if (file.size > MAX_FILE_BYTES) {
+    setStatus('The file is too large. Choose a lesson file under 1 MB.', true);
+    return;
+  }
+
+  importBusy = true;
+  $('import-lesson').disabled = true;
+
+  try {
+    const imported = parseLessonFile(await file.text());
+
+    save();
+    cancelDrag();
+
+    const name = uniqueName(imported.name);
+    activeLesson = newId();
+    state = imported.activity;
+    selected = null;
+
+    lessons.push({
+      id: activeLesson,
+      name,
+      activity: clone(state)
+    });
+
+    closeSetup();
+    lessonOptions();
+    render();
+
+    if (save()) {
+      setStatus(
+        'Imported "' + name + '". All words are in the word bank.'
+      );
+    } else {
+      setStatus(
+        'Imported "' + name + '" for this session, but browser storage ' +
+        'could not save it. Keep the lesson file.',
+        true
+      );
+    }
+
+    $('announce').textContent = 'Lesson imported: ' + name;
+  } catch (error) {
+    setStatus('Import failed. ' + error.message, true);
+  } finally {
+    importBusy = false;
+    $('import-lesson').disabled = false;
+    $('import-file').value = '';
+  }
+};
+
+function tile(word) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'word';
+  button.textContent = word.text;
+  button.dataset.id = word.id;
+  button.setAttribute('aria-pressed', String(selected === word.id));
+
+  button.addEventListener('pointerdown', startDrag);
+
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    if (suppressClick) return;
+
+    selected = selected === word.id ? null : word.id;
+    render();
+
+    if (selected) {
+      $('announce').textContent =
+        word.text + ' selected. Choose a column or the word bank.';
+    }
+  });
+
+  return button;
+}
+
+function render() {
+  const focusId = document.activeElement?.dataset.id;
+
+  $('activity-title').textContent = state.title;
+  $('board').replaceChildren();
+  $('board').style.setProperty('--cols', state.columns.length);
+
+  state.columns.forEach((column, index) => {
+    const box = document.createElement('section');
+    box.className = 'column';
+    box.dataset.zone = index;
+    box.style.setProperty('--color', column.color);
+    box.style.borderStyle = column.style;
+    box.tabIndex = 0;
+
+    box.setAttribute(
+      'aria-label',
+      column.title + '; select to place word'
+    );
+
+    const heading = document.createElement('h2');
+    const name = document.createElement('span');
+    const count = document.createElement('span');
+    const words = state.words.filter(word => word.zone === index);
+
+    name.textContent = column.title;
+    count.className = 'count';
+    count.textContent = words.length;
+    heading.append(name, count);
+
+    const area = document.createElement('div');
+    area.className = 'tiles';
+    words.forEach(word => area.append(tile(word)));
+
+    if (!words.length) {
+      const hint = document.createElement('span');
+      hint.className = 'hint';
+      hint.textContent = 'Drop words here';
+      area.append(hint);
+    }
+
+    box.append(heading, area);
+
+    box.addEventListener('click', () => moveSelected(index));
+
+    box.addEventListener('keydown', event => {
+      if (
+        event.target === box &&
+        (event.key === 'Enter' || event.key === ' ')
+      ) {
+        event.preventDefault();
+        moveSelected(index);
+      }
+    });
+
+    $('board').append(box);
+  });
+
+  const bankWords = state.words.filter(word => word.zone === 'bank');
+
+  $('bank-tiles').replaceChildren(...bankWords.map(tile));
+  $('bank-count').textContent = bankWords.length;
+
+  $('progress').textContent =
+    (state.words.length - bankWords.length) + ' / ' +
+    state.words.length + ' words placed';
+
+  if (!bankWords.length) {
+    const hint = document.createElement('span');
+    hint.className = 'hint';
+    hint.style.padding = '20px';
+
+    hint.textContent = state.words.length
+      ? 'All words placed. Keep discussing — you can still move them!'
+      : 'Add some words in Activity setup to get started.';
+
+    $('bank-tiles').append(hint);
+  }
+
+  if (focusId) {
+    Array.from(document.querySelectorAll('.word')).find(
+      element => element.dataset.id === focusId
+    )?.focus({ preventScroll: true });
+  }
+}
+
+function moveSelected(zone) {
+  if (selected) move(selected, zone);
+}
+
+function move(id, zone) {
+  const word = state.words.find(word => word.id === id);
+  if (!word) return;
+
+  word.zone = zone;
+  selected = null;
+
+  save();
+  render();
+
+  $('announce').textContent = word.text + ' moved to ' +
+    (zone === 'bank' ? 'word bank' : state.columns[zone].title);
+}
+
+$('bank').addEventListener('click', () => moveSelected('bank'));
+
+$('bank').addEventListener('keydown', event => {
+  if (
+    event.target === $('bank') &&
+    (event.key === 'Enter' || event.key === ' ')
+  ) {
+    event.preventDefault();
+    moveSelected('bank');
+  }
+});
+
+// Pointer Events support touchscreen, pen, and mouse dragging.
+function startDrag(event) {
+  if (event.button !== 0 || drag) return;
+
+  const source = event.currentTarget;
+
+  drag = {
+    id: source.dataset.id,
+    x: event.clientX,
+    y: event.clientY,
+    source,
+    pointer: event.pointerId,
+    ghost: null
+  };
+
+  source.setPointerCapture(event.pointerId);
+  source.addEventListener('pointermove', onMove);
+  source.addEventListener('pointerup', endDrag);
+  source.addEventListener('pointercancel', cancelDrag);
+  source.addEventListener('lostpointercapture', cancelDrag);
+}
+
+function onMove(event) {
+  if (!drag || event.pointerId !== drag.pointer) return;
+
+  if (
+    !drag.ghost &&
+    Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 7
+  ) {
+    const rect = drag.source.getBoundingClientRect();
+
+    drag.ghost = drag.source.cloneNode(true);
+    drag.ghost.removeAttribute('data-id');
+    drag.ghost.classList.add('ghost');
+    drag.ghost.style.width = rect.width + 'px';
+    drag.ghost.setAttribute('aria-hidden', 'true');
+
+    document.body.append(drag.ghost);
+    drag.source.classList.add('drag-source');
+  }
+
+  if (!drag.ghost) return;
+
+  event.preventDefault();
+
+  drag.ghost.style.left =
+    (event.clientX - drag.ghost.offsetWidth / 2) + 'px';
+  drag.ghost.style.top = (event.clientY - 30) + 'px';
+
+  document.querySelectorAll('.over').forEach(element =>
+    element.classList.remove('over')
+  );
+
+  document.elementFromPoint(event.clientX, event.clientY)
+    ?.closest('[data-zone]')?.classList.add('over');
+
+  if (event.clientY > innerHeight - 70) window.scrollBy(0, 16);
+  if (event.clientY < 70) window.scrollBy(0, -16);
+}
+
+function cleanup() {
+  if (!drag) return;
+
+  const current = drag;
+  drag = null;
+
+  current.ghost?.remove();
+  current.source.classList.remove('drag-source');
+  current.source.removeEventListener('pointermove', onMove);
+  current.source.removeEventListener('pointerup', endDrag);
+  current.source.removeEventListener('pointercancel', cancelDrag);
+  current.source.removeEventListener('lostpointercapture', cancelDrag);
+
+  if (current.source.hasPointerCapture(current.pointer)) {
+    current.source.releasePointerCapture(current.pointer);
+  }
+
+  document.querySelectorAll('.over').forEach(element =>
+    element.classList.remove('over')
+  );
+}
+
+function endDrag(event) {
+  if (!drag || event.pointerId !== drag.pointer) return;
+
+  const current = drag;
+
+  const zone = document.elementFromPoint(event.clientX, event.clientY)
+    ?.closest('[data-zone]')?.dataset.zone;
+
+  const moved = Boolean(current.ghost);
+  cleanup();
+
+  if (moved) {
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 150);
+
+    if (zone !== undefined) {
+      move(current.id, zone === 'bank' ? 'bank' : Number(zone));
+    }
+  }
+}
+
+function cancelDrag() {
+  cleanup();
+}
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    cancelDrag();
+    selected = null;
+    render();
+  }
+});
+
+function readDraft() {
+  document.querySelectorAll('[data-config]').forEach((row, index) => {
+    draft[index] = {
+      title: row.querySelector('input[type="text"]').value,
+      color: row.querySelector('input[type="color"]').value,
+      style: row.querySelector('select').value
+    };
+  });
+}
+
+function configRows() {
+  const number = Number($('number').value);
+  $('column-settings').replaceChildren();
+
+  for (let index = 0; index < number; index++) {
+    const column = draft[index] || {
+      title: 'Column ' + (index + 1),
+      color: palette[index],
+      style: 'solid'
+    };
+
+    draft[index] = column;
+
+    const row = document.createElement('div');
+    row.className = 'column-config';
+    row.dataset.config = index;
+
+    const title = document.createElement('input');
+    title.type = 'text';
+    title.value = column.title;
+    title.maxLength = 80;
+    title.required = true;
+    title.setAttribute('aria-label', 'Column ' + (index + 1) + ' title');
+
+    const color = document.createElement('input');
+    color.type = 'color';
+    color.value = column.color;
+    color.setAttribute(
+      'aria-label',
+      'Column ' + (index + 1) + ' border color'
+    );
+
+    const style = document.createElement('select');
+    style.setAttribute(
+      'aria-label',
+      'Column ' + (index + 1) + ' border style'
+    );
+
+    borderStyles.forEach(value => {
+      style.append(new Option(
+        value[0].toUpperCase() + value.slice(1),
+        value
+      ));
+    });
+
+    style.value = column.style;
+    row.append(title, color, style);
+    $('column-settings').append(row);
+  }
+}
+
+$('setup').onclick = () => {
+  const open = $('settings').hidden;
+
+  $('settings').hidden = !open;
+  $('setup').setAttribute('aria-expanded', String(open));
+
+  if (open) {
+    draft = state.columns.map(column => ({ ...column }));
+    $('number').value = state.columns.length;
+    $('title').value = state.title;
+    $('words').value = state.words.map(word => word.text).join('\n');
+    $('config-status').textContent = '';
+
+    configRows();
+    restoreDraft();
+  }
+};
+
+$('number').onchange = () => {
+  readDraft();
+  configRows();
+  saveDraft();
+};
+
+$('config').onsubmit = event => {
+  event.preventDefault();
+  readDraft();
+
+  const words = $('words').value
+    .split(/\r?\n/)
+    .map(word => word.trim())
+    .filter(Boolean);
+
+  if (
+    words.length > MAX_WORDS ||
+    words.some(word => word.length > MAX_WORD_LENGTH)
+  ) {
+    $('config-status').textContent =
+      'Use up to 1,000 words or phrases, with no more than ' +
+      '200 characters per tile.';
+    return;
+  }
+
+  const unchanged = JSON.stringify(words) ===
+    JSON.stringify(state.words.map(word => word.text));
+
+  state.title = $('title').value.trim() || 'Word Sort';
+
+  state.columns = draft.slice(0, Number($('number').value))
+    .map(column => ({
+      title: column.title.trim() || 'Column',
+      color: column.color,
+      style: column.style
+    }));
+
+  state.words = unchanged
+    ? state.words.map(word => ({
+        ...word,
+        zone: word.zone === 'bank' || word.zone < state.columns.length
+          ? word.zone
+          : 'bank'
+      }))
+    : words.map((text, index) => ({
+        id: 'w' + index,
+        text,
+        zone: 'bank'
+      }));
+
+  selected = null;
+
+  const saved = save();
+  render();
+  closeSetup();
+
+  try {
+    const pending = JSON.parse(localStorage.getItem(DRAFT_KEY));
+    if (pending?.lesson === activeLesson) {
+      localStorage.removeItem(DRAFT_KEY);
+    }
+  } catch (error) {}
+
+  $('setup').focus();
+  $('announce').textContent = 'Activity updated';
+
+  if (saved) setStatus('Activity updated and saved.');
+};
+
+$('reset').onclick = () => {
+  cancelDrag();
+  state.words.forEach(word => { word.zone = 'bank'; });
+  selected = null;
+
+  save();
+  render();
+
+  $('announce').textContent = 'All words returned to the word bank';
+};
+
+$('fullscreen').onclick = async () => {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await document.documentElement.requestFullscreen();
+    }
+  } catch (error) {
+    setStatus(
+      'Full screen is unavailable. Use your browser’s full-screen control.'
+    );
+  }
+};
+
+document.addEventListener('fullscreenchange', () => {
+  $('fullscreen').textContent = document.fullscreenElement
+    ? '⛶ Exit full screen'
+    : '⛶ Full screen';
+});
+
+function saveDraft() {
+  if ($('settings').hidden) return;
+  readDraft();
+
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      lesson: activeLesson,
+      title: $('title').value,
+      number: Number($('number').value),
+      words: $('words').value,
+      columns: draft
+    }));
+  } catch (error) {
+    $('config-status').textContent = 'Setup draft could not be saved.';
+  }
+}
+
+function restoreDraft() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DRAFT_KEY));
+
+    if (
+      saved &&
+      saved.lesson === activeLesson &&
+      Number.isInteger(saved.number) &&
+      saved.number >= 1 &&
+      saved.number <= 6 &&
+      typeof saved.title === 'string' &&
+      typeof saved.words === 'string' &&
+      validColumns(saved.columns) &&
+      saved.columns.length >= saved.number
+    ) {
+      draft = saved.columns;
+      $('title').value = saved.title;
+      $('number').value = saved.number;
+      $('words').value = saved.words;
+
+      configRows();
+      $('config-status').textContent = 'Your setup draft was restored.';
+    }
+  } catch (error) {}
+}
+
+$('config').addEventListener('input', saveDraft);
+$('config').addEventListener('change', saveDraft);
+
+lessonOptions();
+save();
+render();
+
+try {
+  const saved = JSON.parse(localStorage.getItem(DRAFT_KEY));
+  if (saved?.lesson === activeLesson) $('setup').click();
+} catch (error) {}
+</script>
+</body>
+</html>

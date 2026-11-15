@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Place Value Quiz · Interactive Classroom</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: #223e38;
+    background: #f6f7f2;
+  }
+
+  body { margin: 0; }
+  button, input, select, textarea { font: inherit; }
+
+  button, .link {
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 1px solid #ced8d0;
+    border-radius: 10px;
+    background: white;
+    color: #29483e;
+    font-weight: 650;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  button:hover { background: #edf3ed; }
+  button:disabled { opacity: .5; cursor: default; }
+
+  button:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, a:focus-visible {
+    outline: 3px solid #b98b24;
+    outline-offset: 4px;
+  }
+
+  .primary { background: #285f4c; color: white; border-color: #285f4c; }
+  .primary:hover { background: #174d3a; }
+
+  header {
+    padding: 22px 4vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: #fffef9;
+    border-bottom: 1px solid #dce2d8;
+  }
+
+  header strong { display: block; font-size: 24px; }
+  header small { color: #708076; }
+  header a { color: #285f4c; text-decoration: none; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  main { max-width: 1100px; margin: auto; padding: 32px 24px; }
+  h1 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 10px; }
+  h2 { margin: 0 0 16px; }
+  p { line-height: 1.6; color: #687b70; }
+  [hidden] { display: none !important; }
+
+  .panel {
+    background: #fffefa;
+    padding: clamp(20px, 4vw, 36px);
+    border: 1px solid #d8dfd1;
+    border-radius: 18px;
+    margin-top: 24px;
+  }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+  .row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 90px; }
+  .field { margin-bottom: 20px; }
+
+  label { display: block; font-weight: 650; margin-bottom: 8px; }
+  input:not([type=checkbox]), select, textarea {
+    width: 100%;
+    padding: 11px;
+    min-height: 46px;
+    border: 1px solid #cbd6c7;
+    border-radius: 8px;
+    color: #223e38;
+    background: white;
+  }
+
+  input[type=color] { padding: 5px; }
+  textarea { min-height: 220px; resize: vertical; }
+  .check { display: flex; align-items: center; gap: 12px; min-height: 48px; }
+  .check input { width: 23px; height: 23px; accent-color: #285f4c; }
+  .check label { margin: 0; cursor: pointer; }
+  .nested { padding-left: 35px; }
+  .muted, small { color: #708076; line-height: 1.6; }
+  .notice { min-height: 28px; margin-top: 14px; color: #9b3d33; }
+
+  .quiz-top { display: flex; justify-content: space-between; gap: 16px; }
+  .badge { background: #e6eddf; border-radius: 24px; padding: 9px 16px; }
+  .question { text-align: center; padding: 28px 0 12px; }
+
+  .number {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: .035em;
+    font-weight: 800;
+    font-size: clamp(34px, 8vw, 108px);
+    font-variant-numeric: tabular-nums;
+    margin: 35px 0;
+    white-space: nowrap;
+  }
+
+  .digit {
+    display: inline-block;
+    padding: .03em .06em;
+    border-radius: .12em;
+    border: .035em solid transparent;
+  }
+
+  .marked {
+    --ink: #223e38;
+    color: var(--ink);
+  }
+
+  .marked.background { background: var(--indicator); }
+  .marked.outline { border-color: var(--indicator); }
+  .marked.underline {
+    text-decoration: underline;
+    text-decoration-color: var(--indicator);
+    text-decoration-thickness: .075em;
+    text-underline-offset: .13em;
+  }
+  .marked.text { color: var(--indicator); }
+
+  .options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .option { font-size: 21px; min-height: 70px; border-width: 2px; }
+  .option.selected { border-color: #285f4c; background: #e6eddf; }
+  .option.correct { border-color: #33764b; background: #e1f1e5; }
+  .option.wrong { border-color: #b75a4f; background: #fae9e5; }
+
+  .feedback {
+    min-height: 76px;
+    padding: 18px 0;
+    text-align: center;
+    font-size: 21px;
+    font-weight: 650;
+  }
+  .feedback.good { color: #28633e; }
+  .feedback.bad { color: #a34539; }
+
+  .quiz-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; margin: 24px 0; }
+  .stat { flex: 1; min-width: 150px; background: #eef1e8; padding: 20px; border-radius: 12px; }
+  .stat strong { display: block; font-size: 34px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 22px; }
+  th, td { padding: 13px 10px; text-align: left; border-bottom: 1px solid #dce2d8; }
+  th { color: #52705b; }
+  td { font-variant-numeric: tabular-nums; }
+  footer { margin-top: 28px; font-size: 13px; color: #708076; text-align: center; }
+
+  @media(max-width: 700px) {
+    .grid { grid-template-columns: 1fr; }
+    main { padding: 24px 16px; }
+    .options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .option { font-size: 17px; padding: 12px 6px; }
+    .quiz-top { flex-wrap: wrap; }
+  }
+</style>
+</head>
+
+<body>
+<header>
+  <div>
+    <strong>Place Value</strong>
+    <small>Interactive Classroom · Every digit has a place.</small>
+  </div>
+  <div class="actions">
+    <a class="link" href="/">Classroom home</a>
+    <button id="fullscreen" type="button">Full screen</button>
+  </div>
+</header>
+
+<main>
+  <section id="setup-view">
+    <h1>What is the digit’s place?</h1>
+    <p>Build a number list, choose your settings, and start learning.</p>
+
+    <form id="setup-form" class="panel">
+      <div class="grid">
+        <div>
+          <label for="number-store">Number store</label>
+          <textarea id="number-store" spellcheck="false"
+            placeholder="24&#10;138&#10;507&#10;2469"></textarea>
+          <small>
+            Enter whole numbers, separated by new lines, spaces, or
+            semicolons. Commas within numbers are allowed, such as 1,234.
+            Maximum: 12 digits per number and 500 quiz questions.
+          </small>
+
+          <h2 style="margin-top:28px">Generate numbers</h2>
+          <div class="row">
+            <div>
+              <label for="generate-count">Count</label>
+              <input id="generate-count" type="number"
+                min="1" max="500" step="1" value="10" required>
+            </div>
+            <div>
+              <label for="generate-min">Minimum</label>
+              <input id="generate-min" type="number"
+                min="0" max="999999999999" step="1" value="10" required>
+            </div>
+            <div>
+              <label for="generate-max">Maximum</label>
+              <input id="generate-max" type="number"
+                min="0" max="999999999999" step="1" value="999" required>
+            </div>
+          </div>
+          <button id="generate" type="button" style="margin-top:14px">
+            Generate & replace list
+          </button>
+          <p><small>
+            For exactly 3-digit numbers, use 100–999.
+            For exactly 4-digit numbers, use 1000–9999.
+            Random numbers may repeat.
+          </small></p>
+        </div>
+
+        <div>
+          <div class="check">
+            <input id="shuffle" type="checkbox" checked>
+            <label for="shuffle">Shuffle numbers when starting</label>
+          </div>
+
+          <div class="field" style="margin-top:22px">
+            <label for="indicator-style">Highlighted digit style</label>
+            <select id="indicator-style">
+              <option value="background">Background highlight</option>
+              <option value="outline">Outline</option>
+              <option value="underline">Underline</option>
+              <option value="text">Text color</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="indicator-color">Highlight color</label>
+            <input id="indicator-color" type="color" value="#edc765">
+          </div>
+
+          <div class="check">
+            <input id="allow-corrections" type="checkbox" checked>
+            <label for="allow-corrections">Allow corrections</label>
+          </div>
+
+          <div class="check nested">
+            <input id="force-corrections" type="checkbox">
+            <label for="force-corrections">
+              Require a correct answer before continuing
+            </label>
+          </div>
+
+          <p><small>
+            Each wrong answer submitted counts as an incorrect attempt,
+            even if the answer is corrected later.
+          </small></p>
+
+          <button class="primary" type="submit" style="margin-top:20px">
+            Start quiz
+          </button>
+        </div>
+      </div>
+      <div id="setup-message" class="notice" role="status"></div>
+    </form>
+  </section>
+
+  <section id="quiz-view" class="panel" hidden>
+    <div class="quiz-top">
+      <span id="question-progress" class="badge"></span>
+      <button id="end-quiz" type="button">End quiz</button>
+    </div>
+
+    <div class="question">
+      <h1>What is the highlighted digit’s place?</h1>
+      <div id="quiz-number" class="number"></div>
+      <p>Choose a place, then check your answer.</p>
+    </div>
+
+    <div id="options" class="options" role="group"
+      aria-label="Place value choices"></div>
+
+    <div id="feedback" class="feedback" role="status"
+      aria-live="polite"></div>
+
+    <div class="quiz-actions">
+      <button id="check-answer" class="primary" type="button" disabled>
+        Check answer
+      </button>
+      <button id="next-question" type="button" hidden>
+        Next question
+      </button>
+    </div>
+  </section>
+
+  <section id="results-view" class="panel" hidden>
+    <h1 id="results-title">Quiz complete!</h1>
+    <p id="results-description"></p>
+    <div id="stats" class="stats"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Number</th>
+            <th>Digit</th>
+            <th>Correct place</th>
+            <th>Incorrect attempts</th>
+            <th>Outcome</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+
+    <div class="actions" style="margin-top:26px">
+      <button id="retry" class="primary" type="button">Try quiz again</button>
+      <button id="back-setup" type="button">Back to setup</button>
+    </div>
+  </section>
+
+  <footer id="storage-status">
+    Settings and quiz progress save in this browser on this device.
+  </footer>
+</main>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const STORAGE_KEY = 'interactive-place-value-v1';
+const MAX_NUMBER = 999999999999;
+
+const PLACES = [
+  'Ones', 'Tens', 'Hundreds',
+  'Thousands', 'Ten thousands', 'Hundred thousands',
+  'Millions', 'Ten millions', 'Hundred millions',
+  'Billions', 'Ten billions', 'Hundred billions'
+];
+
+const defaults = {
+  store: '24\n138\n507\n2469\n8305',
+  count: '10',
+  min: '10',
+  max: '999',
+  shuffle: true,
+  style: 'background',
+  color: '#edc765',
+  allow: true,
+  force: false
+};
+
+let settings = { ...defaults };
+let quiz = null;
+let selected = null;
+
+function readSettings() {
+  return {
+    store: $('number-store').value,
+    count: $('generate-count').value,
+    min: $('generate-min').value,
+    max: $('generate-max').value,
+    shuffle: $('shuffle').checked,
+    style: $('indicator-style').value,
+    color: $('indicator-color').value,
+    allow: $('allow-corrections').checked,
+    force: $('allow-corrections').checked &&
+      $('force-corrections').checked
+  };
+}
+
+function fillSettings() {
+  $('number-store').value = settings.store;
+  $('generate-count').value = settings.count;
+  $('generate-min').value = settings.min;
+  $('generate-max').value = settings.max;
+  $('shuffle').checked = settings.shuffle;
+  $('indicator-style').value = settings.style;
+  $('indicator-color').value = settings.color;
+  $('allow-corrections').checked = settings.allow;
+  $('force-corrections').checked = settings.force;
+  syncCorrections();
+}
+
+function syncCorrections() {
+  const allowed = $('allow-corrections').checked;
+  $('force-corrections').disabled = !allowed;
+  if (!allowed) $('force-corrections').checked = false;
+}
+
+function persist() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 1, settings, quiz })
+    );
+    $('storage-status').textContent =
+      'Settings and quiz progress save in this browser on this device.';
+  } catch (error) {
+    $('storage-status').textContent =
+      'Browser storage is unavailable or full. This session cannot be saved.';
+  }
+}
+
+function validSettings(s) {
+  return s &&
+    typeof s.store === 'string' &&
+    ['count', 'min', 'max'].every(key => typeof s[key] === 'string') &&
+    ['shuffle', 'allow', 'force'].every(key => typeof s[key] === 'boolean') &&
+    ['background', 'outline', 'underline', 'text'].includes(s.style) &&
+    /^#[0-9a-f]{6}$/i.test(s.color);
+}
+
+function validQuiz(q) {
+  return q &&
+    validSettings(q.config) &&
+    ['active', 'complete', 'ended'].includes(q.status) &&
+    Array.isArray(q.questions) &&
+    q.questions.length > 0 &&
+    q.questions.length <= 500 &&
+    Number.isInteger(q.index) &&
+    q.index >= 0 && q.index < q.questions.length &&
+    q.questions.every(item =>
+      /^(0|[1-9]\d{0,11})$/.test(item.number) &&
+      Number.isInteger(item.digit) &&
+      item.digit >= 0 && item.digit < item.number.length &&
+      Number.isInteger(item.wrong) && item.wrong >= 0 &&
+      typeof item.correct === 'boolean' &&
+      (
+        item.last === null ||
+        Number.isInteger(item.last) &&
+        item.last >= 0 && item.last < item.number.length
+      )
+    );
+}
+
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  if (saved && saved.version === 1 && validSettings(saved.settings)) {
+    settings = saved.settings;
+    if (validQuiz(saved.quiz)) quiz = saved.quiz;
+  }
+} catch (error) {}
+
+function show(view) {
+  ['setup', 'quiz', 'results'].forEach(name => {
+    $(name + '-view').hidden = name !== view;
+  });
+}
+
+function parseNumbers(text) {
+  const tokens = text.trim().split(/[\s;]+/).filter(Boolean);
+  if (!tokens.length) throw new Error('Enter or generate some numbers first.');
+  if (tokens.length > 500) throw new Error('Use no more than 500 numbers.');
+
+  return tokens.map((token, index) => {
+    // Allow either plain digits or properly grouped thousands separators.
+    if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(token)) {
+      throw new Error(
+        'Item ' + (index + 1) +
+        ' is not a valid whole number: "' + token + '".'
+      );
+    }
+
+    const digits = token.replaceAll(',', '').replace(/^0+(?=\d)/, '');
+
+    if (digits.length > 12) {
+      throw new Error('Item ' + (index + 1) + ' exceeds 12 digits.');
+    }
+
+    return digits;
+  });
+}
+
+function shuffled(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function startQuiz() {
+  settings = readSettings();
+  let numbers;
+
+  try {
+    numbers = parseNumbers(settings.store);
+  } catch (error) {
+    $('setup-message').textContent = error.message;
+    return;
+  }
+
+  if (settings.shuffle) numbers = shuffled(numbers);
+
+  quiz = {
+    status: 'active',
+    index: 0,
+    config: { ...settings },
+    questions: numbers.map(number => ({
+      number,
+      digit: Math.floor(Math.random() * number.length),
+      wrong: 0,
+      correct: false,
+      last: null
+    }))
+  };
+
+  selected = null;
+  $('setup-message').textContent = '';
+  persist();
+  renderQuiz();
+}
+
+function currentQuestion() {
+  return quiz.questions[quiz.index];
+}
+
+function correctPlace(question) {
+  return question.number.length - question.digit - 1;
+}
+
+function canCorrect(question) {
+  return quiz.config.allow && !question.correct;
+}
+
+function canContinue(question) {
+  return question.last !== null &&
+    (question.correct || !quiz.config.force);
+}
+
+function contrastColor(hex) {
+  const rgb = hex.slice(1).match(/../g).map(x => parseInt(x, 16) / 255);
+  const linear = rgb.map(x =>
+    x <= .04045 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4)
+  );
+  const luminance =
+    .2126 * linear[0] + .7152 * linear[1] + .0722 * linear[2];
+  return luminance > .179 ? '#182f27' : '#ffffff';
+}
+
+function renderQuiz() {
+  show('quiz');
+
+  const question = currentQuestion();
+  const config = quiz.config;
+  const answer = correctPlace(question);
+  const locked = question.correct ||
+    (question.last !== null && !config.allow);
+
+  $('question-progress').textContent =
+    'Question ' + (quiz.index + 1) + ' of ' + quiz.questions.length;
+
+  const number = $('quiz-number');
+  number.replaceChildren();
+  number.style.setProperty('--indicator', config.color);
+  number.setAttribute(
+    'aria-label',
+    'Number ' + question.number + '. Highlighted digit ' +
+    question.number[question.digit] + ', digit ' +
+    (question.digit + 1) + ' from the left.'
+  );
+
+  [...question.number].forEach((digit, index) => {
+    const span = document.createElement('span');
+    span.className = 'digit';
+    span.textContent = digit;
+    span.setAttribute('aria-hidden', 'true');
+
+    if (index === question.digit) {
+      span.classList.add('marked', config.style);
+      if (config.style === 'background') {
+        span.style.setProperty('--ink', contrastColor(config.color));
+      }
+    }
+    number.append(span);
+  });
+
+  // Keep long numbers within the available display width.
+  number.style.fontSize =
+    'clamp(22px, ' + Math.min(8, 70 / question.number.length) +
+    'vw, 108px)';
+
+  $('options').replaceChildren();
+
+  PLACES.slice(0, question.number.length).forEach((place, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'option';
+    button.textContent = place;
+    button.disabled = locked;
+    button.setAttribute('aria-pressed', String(selected === index));
+
+    if (selected === index) button.classList.add('selected');
+
+    if (question.last === index) {
+      button.classList.add(question.correct ? 'correct' : 'wrong');
+    }
+
+    button.onclick = () => {
+      selected = index;
+      renderQuiz();
+      $('options').children[index].focus({ preventScroll: true });
+    };
+
+    $('options').append(button);
+  });
+
+  const feedback = $('feedback');
+  feedback.className = 'feedback';
+
+  if (question.correct) {
+    feedback.classList.add('good');
+    feedback.textContent =
+      'Correct! The digit is in the ' + PLACES[answer].toLowerCase() +
+      ' place.';
+  } else if (question.last !== null) {
+    feedback.classList.add('bad');
+
+    if (config.force) {
+      feedback.textContent =
+        'Not quite. Choose another answer—you must correct this one.';
+    } else if (config.allow) {
+      feedback.textContent =
+        'Not quite. Try another answer, or continue to the next question.';
+    } else {
+      feedback.textContent =
+        'Not quite. The correct place is ' + PLACES[answer].toLowerCase() +
+        '.';
+    }
+  } else {
+    feedback.textContent = '';
+  }
+
+  $('check-answer').hidden = locked;
+  $('check-answer').disabled =
+    selected === null || locked || selected === question.last;
+  $('check-answer').textContent =
+    question.last !== null ? 'Check correction' : 'Check answer';
+
+  $('next-question').hidden = !canContinue(question);
+  $('next-question').textContent =
+    quiz.index === quiz.questions.length - 1
+      ? 'See results'
+      : 'Next question';
+}
+
+$('check-answer').onclick = () => {
+  const question = currentQuestion();
+
+  if (
+    selected === null ||
+    question.correct ||
+    question.last !== null && !canCorrect(question) ||
+    selected === question.last
+  ) return;
+
+  question.last = selected;
+
+  if (selected === correctPlace(question)) {
+    question.correct = true;
+  } else {
+    question.wrong++;
+  }
+
+  persist();
+  renderQuiz();
+
+  if (question.correct || !quiz.config.allow) {
+    $('next-question').focus();
+  } else {
+    const firstEnabled = $('options').querySelector('button:not(:disabled)');
+    firstEnabled?.focus({ preventScroll: true });
+  }
+};
+
+$('next-question').onclick = () => {
+  if (!canContinue(currentQuestion())) return;
+
+  if (quiz.index === quiz.questions.length - 1) {
+    quiz.status = 'complete';
+    persist();
+    renderResults();
+  } else {
+    quiz.index++;
+    selected = null;
+    persist();
+    renderQuiz();
+    $('options').querySelector('button')?.focus({ preventScroll: true });
+  }
+};
+
+function renderResults() {
+  show('results');
+
+  const questions = quiz.questions;
+  const attempted = questions.filter(q => q.last !== null).length;
+  const firstTry = questions.filter(q => q.correct && q.wrong === 0).length;
+  const corrected = questions.filter(q => q.correct && q.wrong > 0).length;
+  const wrong = questions.reduce((sum, q) => sum + q.wrong, 0);
+
+  $('results-title').textContent =
+    quiz.status === 'complete' ? 'Quiz complete!' : 'Quiz ended';
+
+  $('results-description').textContent =
+    attempted + ' of ' + questions.length +
+    ' questions attempted. Every submitted wrong answer is counted below.';
+
+  $('stats').replaceChildren();
+
+  [
+    ['Correct first try', firstTry],
+    ['Corrected answers', corrected],
+    ['Incorrect attempts', wrong]
+  ].forEach(([label, value]) => {
+    const box = document.createElement('div');
+    box.className = 'stat';
+    const strong = document.createElement('strong');
+    strong.textContent = value;
+    const text = document.createElement('span');
+    text.textContent = label;
+    box.append(strong, text);
+    $('stats').append(box);
+  });
+
+  $('results-body').replaceChildren();
+
+  questions.forEach(question => {
+    const row = document.createElement('tr');
+    const outcome = question.last === null
+      ? 'Not attempted'
+      : question.correct
+        ? question.wrong ? 'Corrected' : 'Correct first try'
+        : 'Incorrect';
+
+    [
+      Number(question.number).toLocaleString('en-US'),
+      question.number[question.digit] +
+        ' (' + (question.digit + 1) + ' from left)',
+      PLACES[correctPlace(question)],
+      question.wrong,
+      outcome
+    ].forEach(value => {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      row.append(cell);
+    });
+
+    $('results-body').append(row);
+  });
+}
+
+$('end-quiz').onclick = () => {
+  if (!confirm('End this quiz and show the results so far?')) return;
+  quiz.status = 'ended';
+  persist();
+  renderResults();
+};
+
+$('back-setup').onclick = () => {
+  quiz = null;
+  selected = null;
+  fillSettings();
+  persist();
+  show('setup');
+};
+
+$('retry').onclick = () => {
+  settings = { ...quiz.config };
+  fillSettings();
+  startQuiz();
+};
+
+$('generate').onclick = () => {
+  const count = Number($('generate-count').value);
+  const min = Number($('generate-min').value);
+  const max = Number($('generate-max').value);
+
+  if (
+    !$('generate-count').value ||
+    !$('generate-min').value ||
+    !$('generate-max').value ||
+    !Number.isInteger(count) || count < 1 || count > 500 ||
+    !Number.isInteger(min) || min < 0 ||
+    !Number.isInteger(max) || max > MAX_NUMBER || max < min
+  ) {
+    $('setup-message').textContent =
+      'Use a count from 1–500 and whole-number limits from 0–999999999999, ' +
+      'with minimum no greater than maximum.';
+    return;
+  }
+
+  if (
+    $('number-store').value.trim() &&
+    !confirm('Replace the current number list with generated numbers?')
+  ) return;
+
+  $('number-store').value = Array.from(
+    { length: count },
+    () => String(min + Math.floor(Math.random() * (max - min + 1)))
+  ).join('\n');
+
+  settings = readSettings();
+  persist();
+  $('setup-message').textContent = count + ' numbers generated.';
+};
+
+$('setup-form').onsubmit = event => {
+  event.preventDefault();
+  startQuiz();
+};
+
+$('setup-form').addEventListener('input', () => {
+  syncCorrections();
+  settings = readSettings();
+  persist();
+});
+
+$('setup-form').addEventListener('change', () => {
+  syncCorrections();
+  settings = readSettings();
+  persist();
+});
+
+$('fullscreen').onclick = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (error) {
+    $('storage-status').textContent =
+      'Full screen is unavailable. Use your browser’s full-screen command.';
+  }
+};
+
+document.addEventListener('fullscreenchange', () => {
+  $('fullscreen').textContent =
+    document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+});
+
+fillSettings();
+
+if (quiz) {
+  selected = quiz.questions[quiz.index].last;
+  if (quiz.status === 'active') renderQuiz();
+  else renderResults();
+} else {
+  show('setup');
+}
+</script>
+</body>
+</html>
